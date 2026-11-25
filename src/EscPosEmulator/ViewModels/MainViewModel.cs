@@ -669,7 +669,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // The programmatic refill above sets _lastDriverDisplay first, so it is
         // treated as a no-op here.
         if (value == _lastDriverDisplay) return;
-        _lastDriverDisplay = value;
+        _lastDriverDisplay = value ?? "";
         _ = ReapplyVirtualPrinterDriverCoreAsync(_settings.VirtualPrinterDriver);
     }
 

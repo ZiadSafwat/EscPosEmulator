@@ -31,36 +31,27 @@ public sealed class VirtualPrinterService
     public static string PortNameFor(int port) => $"{PortPrefix}127.0.0.1_{port}";
 
     /// <summary>
-    /// All printer driver names installed on the machine ("Printer Drivers"
-    /// under the spooler). Best-effort; empty list when unavailable.
+    /// All printer driver names in use on this machine, plus the always-present
+    /// inbox "Generic / Text Only" driver.
+    ///
+    /// Source: the spooler registry (HKLM\SYSTEM\...\Control\Print\Printers),
+    /// the same layout PrinterScanner already reads successfully — no P/Invoke,
+    /// no elevation, works on machines where the classic
+    /// SOFTWARE\...\Print\PrintDrivers key does not exist (print-package /
+    /// modern driver installs).
     /// </summary>
     public static IReadOnlyList<string> GetInstalledDrivers()
     {
-        if (!IsWindows) return Array.Empty<string>();
-        try
-        {
-            Microsoft.Win32.RegistryKey? key =
-                Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
-                    @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\PrintDrivers\amd64\3")
-                ?? Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
-                    @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\PrintDrivers\x64\3");
-            if (key == null) return Array.Empty<string>();
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            string[] names;
-            using (key)
-            {
-                names = key.GetSubKeyNames();
-            }
-            return names
-                   .Where(n => n != "DriverList")
-                   .Distinct(StringComparer.OrdinalIgnoreCase)
-                   .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
-                   .ToList();
-        }
-        catch
-        {
-            return Array.Empty<string>();
-        }
+        foreach (var p in PrinterScanner.Scan())
+            if (!string.IsNullOrWhiteSpace(p.DriverName)
+                && !p.DriverName.StartsWith("?", StringComparison.Ordinal))
+                result.Add(p.DriverName);
+
+        result.Add(DriverName);   // inbox driver, always available
+
+        return result.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     /// <summary>True when a printer driver with this exact name is installed.</summary>
