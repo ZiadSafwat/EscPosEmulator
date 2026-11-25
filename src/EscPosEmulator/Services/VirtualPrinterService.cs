@@ -136,6 +136,26 @@ public sealed class VirtualPrinterService
         return null;
     }
 
+    /// <summary>
+    /// The driver a printer currently uses, read from the spooler registry
+    /// (read-only, no elevation). Null when unknown.
+    /// </summary>
+    public static string? ExistingDriverName(string? name)
+    {
+        if (!IsWindows || string.IsNullOrWhiteSpace(name)) return null;
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                $@"SYSTEM\CurrentControlSet\Control\Print\Printers\{name.Trim()}");
+            return (key?.GetValue("Printer Driver")  as string)
+                ?? (key?.GetValue("DriverName")      as string);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     /// <summary>Can TCP reach 127.0.0.1:port right now? (Is the emulator listening?)</summary>
     public static bool ServerReachable(int port, int timeoutMs = 1500)
     {
@@ -199,6 +219,44 @@ if ($existing) {{
 
         return ok
             ? (true, $"Printer '{name}' installed → 127.0.0.1:{port}")
+            : (false, msg);
+    }
+
+    /// <summary>
+    /// Re-attach a different driver to an already-installed virtual printer
+    /// (remove + re-add inside ONE elevated call, keeping name and port).
+    /// </summary>
+    public async Task<(bool Ok, string Message)> SetDriverAsync(string name, int port, string? driver = null)
+    {
+        if (!IsWindows)
+            return (false, "Virtual system printers are only supported on Windows.");
+        string useDriver = ResolveDriver(driver);
+
+        string script = $@"
+$ErrorActionPreference = 'Stop'
+$name     = {PsQuote(name)}
+$portName = {PsQuote(PortNameFor(port))}
+$driver   = {PsQuote(useDriver)}
+
+$p = Get-Printer -Name $name -ErrorAction SilentlyContinue
+if (-not $p) {{
+    throw ""Printer '$name' was not found.""
+}}
+if ($p.PortName -notlike '{PortPrefix}*') {{
+    throw ""'$name' was not created by this tool - refusing to touch it.""
+}}
+if ($p.DriverName -ne $driver) {{
+    Remove-Printer -Name $name
+    Add-Printer -Name $name -DriverName $driver -PortName $portName
+}}
+";
+
+        var (ok, msg) = await RunElevatedAsync(script);
+        if (ok && !Exists(name))
+            return (false, "The driver change finished, but Windows does not list the printer anymore.");
+
+        return ok
+            ? (true, $"Printer '{name}' now uses driver '{useDriver}'.")
             : (false, msg);
     }
 

@@ -23,6 +23,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly AppSettings _settings;
 
     private SKBitmap? _lastSkBitmap;   // keep last render for zoom re-scaling
+    private bool _driverAutoApplyDone; // one-shot startup flag (see MaybeAutoApplyDriverAsync)
     private readonly RenderOptions _printRenderOptions = new();
     private readonly DispatcherTimer _previewDebounce;
 
@@ -180,9 +181,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RemoveVirtualPrinterCommand = new AsyncRelayCommand(RemoveVirtualPrinterAsync);
         SelectEscPosPrinterCommand = new RelayCommand(SelectEscPosPrinter);
 
+        _driverAutoApplyDone = false;
         RefreshSystemPrinters();
         RefreshVirtualPrinterState();
         UpdateArabicPrinterAdvice();
+        _ = MaybeAutoApplyDriverAsync();
 
         StatusMessage = "Ready — type a printer name and click Install, then print to it from any app.";
         RefreshPrinterSettingsSummary();
@@ -649,8 +652,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         VirtualPrinterDrivers.Clear();
         foreach (var d in list) VirtualPrinterDrivers.Add(d);
+        _lastDriverDisplay = display;          // suppress the "user changed it" handler
         VirtualPrinterDriver = display;
     }
+
+    private string _lastDriverDisplay = "\u0000";   // sentinel: never matches a real entry
 
     partial void OnVirtualPrinterDriverChanged(string value)
     {
@@ -658,6 +664,61 @@ public partial class MainViewModel : ObservableObject, IDisposable
         string raw = value ?? "";
         _settings.VirtualPrinterDriver = raw.StartsWith("✓ ") ? raw[2..] : raw;
         PersistSettings();
+
+        // Only a *user* pick re-applies the driver to an installed printer (UAC).
+        // The programmatic refill above sets _lastDriverDisplay first, so it is
+        // treated as a no-op here.
+        if (value == _lastDriverDisplay) return;
+        _lastDriverDisplay = value;
+        _ = ReapplyVirtualPrinterDriverCoreAsync(_settings.VirtualPrinterDriver);
+    }
+
+    private async Task ReapplyVirtualPrinterDriverCoreAsync(string driver)
+    {
+        if (IsVirtualPrinterBusy || !_virtualPrinter.Exists(VirtualPrinterName)) return;
+
+        string? current = VirtualPrinterService.ExistingDriverName(VirtualPrinterName);
+        if (string.Equals(current, driver, StringComparison.OrdinalIgnoreCase)) return;
+
+        IsVirtualPrinterBusy = true;
+        VirtualPrinterStatus = $"Setting driver '{driver}'… waiting for administrator permission…";
+        try
+        {
+            var (ok, msg) = await _virtualPrinter.SetDriverAsync(VirtualPrinterName, Port, driver);
+            VirtualPrinterStatus = (ok ? "✓ " : "✕ ") + msg;
+            StatusMessage = ok ? $"Virtual printer now uses driver '{driver}' (Arabic-safe)." : msg;
+            AppendLog(ok
+                ? $"Virtual printer driver changed to '{driver}'."
+                : $"Driver change failed: {msg}");
+        }
+        finally
+        {
+            IsVirtualPrinterBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// One-shot at startup: if a virtual printer already exists and its
+    /// driver differs from the (auto)selected one, re-apply the selected
+    /// driver so Arabic-safe output starts working immediately.
+    /// </summary>
+    private async Task MaybeAutoApplyDriverAsync()
+    {
+        if (_driverAutoApplyDone) return;
+        _driverAutoApplyDone = true;
+
+        if (!VirtualPrinterService.IsWindows) return;
+        if (string.IsNullOrWhiteSpace(VirtualPrinterName)) return;
+        if (!_virtualPrinter.Exists(VirtualPrinterName)) return;
+        if (IsVirtualPrinterBusy) return;
+
+        string picked = _settings.VirtualPrinterDriver ?? "";
+        string? current = VirtualPrinterService.ExistingDriverName(VirtualPrinterName);
+        if (string.Equals(current, picked, StringComparison.OrdinalIgnoreCase)) return;
+
+        AppendLog($"Existing printer '{VirtualPrinterName}' uses driver '{current ?? "?"}' — " +
+                  $"auto-applying selected driver '{picked}'.");
+        await ReapplyVirtualPrinterDriverCoreAsync(picked);
     }
 
     private async Task InstallVirtualPrinterAsync()
