@@ -7,33 +7,37 @@
         Title="Advanced Document Settings — Properties"
         Width="520" Height="400"
         WindowStartupLocation="CenterOwner"
-        RequestedThemeVariant="Light"
-        Background="#F0F0F0"
+        RequestedThemeVariant="Dark"
+        Background="#1E1E1E"
         CanResize="False">
   <Grid RowDefinitions="Auto,*,Auto">
 
-    <!-- title bar inside the client area, Windows properties style -->
-    <Border Grid.Row="0" Background="#0078D7" Padding="12,8">
+    <!-- title bar inside the client area, app palette -->
+    <Border Grid.Row="0" Background="#111111" BorderBrush="#333" BorderThickness="0,0,0,1" Padding="14,10">
       <StackPanel Orientation="Horizontal" Spacing="10">
-        <Border Width="18" Height="18" CornerRadius="3" Background="#33FFFFFF"/>
-        <TextBlock Text="{Binding PrinterName}" Foreground="White" FontSize="14"
+        <Border Width="20" Height="20" CornerRadius="4" Background="#2D5A27">
+          <TextBlock Text="⚙" FontSize="11" Foreground="#A5D6A7"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+        <TextBlock Text="{Binding PrinterName}" Foreground="#E0E0E0" FontSize="14"
                    FontWeight="SemiBold" VerticalAlignment="Center"/>
       </StackPanel>
     </Border>
 
     <!-- properties grid -->
-    <Border Grid.Row="1" Margin="12" Background="White" BorderBrush="#C0C0C0" BorderThickness="1">
-      <ListBox ItemsSource="{Binding Rows}" Background="White" BorderThickness="0"
+    <Border Grid.Row="1" Margin="12" Background="#1E1E1E" BorderBrush="#333" BorderThickness="1"
+            CornerRadius="6">
+      <ListBox ItemsSource="{Binding Rows}" Background="Transparent" BorderThickness="0"
                SelectionMode="Single" Padding="0">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="models:PropertyValue">
-            <ListBoxItem Padding="0,0,0,0" Foreground="#111">
+            <ListBoxItem Padding="0,0,0,0" Background="Transparent">
               <Grid ColumnDefinitions="180,*" RowDefinitions="*,Auto" MinHeight="34">
                 <TextBlock Grid.Column="0" Text="{Binding Name}" Margin="12,8,8,8" FontSize="13"
-                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                           Foreground="#CCC" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                 <TextBlock Grid.Column="1" Text="{Binding Value}" Margin="4,8,12,8" FontSize="13"
-                           Foreground="#222" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                <Rectangle Grid.ColumnSpan="2" Grid.Row="1" Height="1" Fill="#ECECEC"/>
+                           Foreground="#9CDCFE" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                <Rectangle Grid.ColumnSpan="2" Grid.Row="1" Height="1" Fill="#2D2D30"/>
               </Grid>
             </ListBoxItem>
           </DataTemplate>
@@ -42,12 +46,15 @@
     </Border>
 
     <!-- footer -->
-    <Border Grid.Row="2" Background="#E1E1E1" BorderBrush="#C0C0C0" BorderThickness="0,1,0,0">
-      <Grid ColumnDefinitions="*,Auto" Margin="12,10">
-        <Button Content="Properties…" HorizontalAlignment="Left" Padding="18,5" FontSize="13"/>
+    <Border Grid.Row="2" Background="#111111" BorderBrush="#333" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto" Margin="12,8">
+        <Button Content="Properties…" HorizontalAlignment="Left" Padding="18,5" FontSize="13"
+                Background="#3E3E42" Foreground="#CCC" CornerRadius="4"/>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-          <Button Content="OK" Width="88" IsDefault="True" Click="OnAccept"/>
-          <Button Content="Cancel" Width="88" IsCancel="True"/>
+          <Button Content="OK" Width="88" IsDefault="True" Click="OnAccept"
+                  Background="#0E639C" Foreground="White" Padding="0,6" CornerRadius="4"/>
+          <Button Content="Cancel" Width="88" IsCancel="True"
+                  Background="#3E3E42" Foreground="#CCC" Padding="0,6" CornerRadius="4"/>
         </StackPanel>
       </Grid>
     </Border>
