@@ -3,6 +3,7 @@
 > Emulate an ESC/POS thermal receipt printer on Windows — live preview, 37 hardware
 > profiles, virtual Windows printer, and full Arabic (RTL) support.
 
+[![Website](https://img.shields.io/badge/Website-ziadsafwat.github.io%2FEscPosEmulator-4EC9B0)](https://ziadsafwat.github.io/EscPosEmulator/)
 [![Latest release](https://img.shields.io/github/v/release/ZiadSafwat/EscPosEmulator?color=2ea44f&label=latest%20release)](https://github.com/ZiadSafwat/EscPosEmulator/releases/latest)
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![Avalonia](https://img.shields.io/badge/Avalonia-11-4513D1?logo=avalonia&logoColor=white)](https://avaloniaui.net/)

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>ESC/POS Thermal Printer Emulator for Windows — Free Download</title>
+  <meta name="description" content="Free ESC/POS thermal printer emulator for Windows 10/11. Live receipt preview, a real virtual printer, Arabic RTL support, QR codes and 37 hardware profiles. Portable single-file download.">
+  <meta name="keywords" content="ESC/POS emulator, thermal printer emulator, virtual receipt printer, POS testing, ESC/POS simulator, Arabic receipt printer, Windows printer emulator, Xprinter, Epson TM-T88">
+  <meta name="author" content="Ziad El-Araby">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#141416">
+  <link rel="canonical" href="https://ziadsafwat.github.io/EscPosEmulator/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ESC/POS Thermal Printer Emulator">
+  <meta property="og:title" content="ESC/POS Thermal Printer Emulator for Windows">
+  <meta property="og:description" content="Test receipts without a thermal printer: live preview, real Windows virtual printer, Arabic RTL, QR/barcodes and 37 profiles. Free and open source.">
+  <meta property="og:url" content="https://ziadsafwat.github.io/EscPosEmulator/">
+  <meta property="og:image" content="https://ziadsafwat.github.io/EscPosEmulator/main-window.png">
+  <meta property="og:image:width" content="1004">
+  <meta property="og:image:height" content="700">
+  <meta property="og:image:alt" content="ESC/POS Thermal Printer Emulator main window with a live receipt preview">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ESC/POS Thermal Printer Emulator for Windows">
+  <meta name="twitter:description" content="Free virtual ESC/POS printer with live preview, Arabic RTL support and 37 hardware profiles.">
+  <meta name="twitter:image" content="https://ziadsafwat.github.io/EscPosEmulator/main-window.png">
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ESC/POS Thermal Printer Emulator",
+    "applicationCategory": "DeveloperApplication",
+    "applicationSubCategory": "Printer Emulator",
+    "operatingSystem": "Windows 10, Windows 11",
+    "softwareVersion": "3.1.0",
+    "url": "https://ziadsafwat.github.io/EscPosEmulator/",
+    "downloadUrl": "https://github.com/ZiadSafwat/EscPosEmulator/releases/latest/download/EscPosEmulator.exe",
+    "screenshot": "https://ziadsafwat.github.io/EscPosEmulator/main-window.png",
+    "description": "Free ESC/POS thermal receipt printer emulator for Windows with live preview, a real virtual Windows printer, Arabic RTL shaping, QR/barcode support and 37 hardware profiles.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "license": "https://github.com/ZiadSafwat/EscPosEmulator/blob/main/LICENSE",
+    "author": { "@type": "Person", "name": "Ziad El-Araby", "url": "https://github.com/ZiadSafwat" },
+    "sameAs": ["https://github.com/ZiadSafwat/EscPosEmulator"]
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is the ESC/POS emulator free?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. The emulator is free, open source and released under the MIT license. There is no account and no telemetry." }
+      },
+      {
+        "@type": "Question",
+        "name": "Does it require .NET to be installed?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No. The Windows download is a self-contained single-file executable, so the .NET runtime does not need to be installed." }
+      },
+      {
+        "@type": "Question",
+        "name": "Does it support Arabic receipts?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. It supports Windows-1256, CP720 and UTF-8 with HarfBuzz shaping, bidi ordering and Arabic-capable fonts. Use the Send Arabic Demo button to test." }
+      },
+      {
+        "@type": "Question",
+        "name": "Which POS apps can print to it?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Any POS app that can print to a Windows printer, or send raw ESC/POS bytes to a TCP printer on port 9100, can use the emulator." }
+      },
+      {
+        "@type": "Question",
+        "name": "Does it work without a real thermal printer?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. The app renders every receipt in a live preview, so no physical hardware is needed. You can also forward the rendered receipt to any installed Windows printer." }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="./" aria-label="ESC/POS Emulator home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 8V4h10v4"/>
+            <path d="M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/>
+            <rect x="7" y="14" width="10" height="7" rx="1.2"/>
+            <circle cx="17.5" cy="11.5" r=".9" fill="currentColor" stroke="none"/>
+          </svg>
+        </span>
+        <span class="brand-text">ESC/POS <span>Emulator</span></span>
+      </a>
+
+      <nav class="nav" id="nav" aria-label="Main navigation">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#faq">FAQ</a>
+        <a class="nav-gh" href="https://github.com/ZiadSafwat/EscPosEmulator" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2.18c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.41-2.69 5.38-5.25 5.67.41.35.78 1.04.78 2.1v3.11c0 .31.21.68.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+          GitHub
+        </a>
+      </nav>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="dot"></span> v3.1.0 · Free &amp; open source</p>
+          <h1>Test ESC/POS receipts <span class="grad">without a thermal printer</span></h1>
+          <p class="lede">
+            A Windows emulator that looks and behaves like real hardware: a live receipt
+            preview, a named virtual printer for any POS app, full Arabic RTL support and
+            37 printer profiles.
+          </p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="https://github.com/ZiadSafwat/EscPosEmulator/releases/latest/download/EscPosEmulator.exe">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 1 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.42l3.3 3.3V4a1 1 0 0 1 1-1zm-7 14a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1z"/></svg>
+              Download for Windows
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/ZiadSafwat/EscPosEmulator">View on GitHub</a>
+          </div>
+          <p class="micro">Windows 10 / 11 · 64-bit · portable single file · no .NET install needed</p>
+
+          <dl class="stats">
+            <div><dt>37</dt><dd>printer profiles</dd></div>
+            <div><dt>25–300%</dt><dd>preview zoom</dd></div>
+            <div><dt>RTL</dt><dd>Arabic shaping</dd></div>
+          </dl>
+        </div>
+
+        <figure class="hero-media">
+          <div class="shot-frame">
+            <img src="main-window.png" width="1004" height="700"
+                 alt="ESC/POS Emulator window showing a live thermal receipt preview next to printer settings">
+          </div>
+          <figcaption>Live preview of a demo receipt at 75% zoom</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Why this emulator</p>
+          <h2>Everything a POS test bench needs</h2>
+          <p>Built from real ESC/POS traffic — not a mock. Feed it bytes and see exactly what the printer would print.</p>
+        </div>
+
+        <div class="grid features">
+          <article class="card">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            </span>
+            <h3>Live receipt preview</h3>
+            <p>Every connection renders instantly at thermal resolution, with 25–300% zoom and job/drawer counters.</p>
+          </article>
+
+          <article class="card">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+            </span>
+            <h3>Arabic &amp; RTL</h3>
+            <p>HarfBuzz shaping, bidi ordering and Windows-1256 / CP720 / UTF-8 decoding — connected letters, correct order.</p>
+          </article>
+
+          <article class="card">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8V4h10v4"/><path d="M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1.2"/></svg>
+            </span>
+            <h3>Real Windows virtual printer</h3>
+            <p>Install a queue with any name. Anything printed to it is forwarded as RAW bytes to the emulator.</p>
+          </article>
+
+          <article class="card">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/></svg>
+            </span>
+            <h3>37 hardware profiles</h3>
+            <p>Epson, Star, Citizen, Bixolon, Xprinter, Rongta and more — paper width, DPI, cutter and drawer support.</p>
+          </article>
+
+          <article class="card">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h7M20 17v4"/></svg>
+            </span>
+            <h3>QR, barcodes &amp; raster</h3>
+            <p>GS ( k QR codes, CODE39/EAN/CODE128 barcodes, GS v 0 bitmaps with band merging and halftoning.</p>
+          </article>
+
+          <article class="card">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 16V3M8 7l4-4 4 4"/></svg>
+            </span>
+            <h3>Forward to real hardware</h3>
+            <p>Send the rendered receipt to any installed Windows printer — thermal, laser or Microsoft Print to PDF.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section alt" id="how-it-works">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Three steps</p>
+          <h2>From download to first receipt in minutes</h2>
+        </div>
+
+        <ol class="steps">
+          <li>
+            <span class="step-num">01</span>
+            <h3>Run the portable exe</h3>
+            <p>Download the single file and launch it. No installer, no .NET runtime, no background service.</p>
+          </li>
+          <li>
+            <span class="step-num">02</span>
+            <h3>Start &amp; install</h3>
+            <p>Start the TCP server, name a virtual printer and approve the one-time UAC prompt.</p>
+          </li>
+          <li>
+            <span class="step-num">03</span>
+            <h3>Print from your POS</h3>
+            <p>Select that printer in your POS app — every receipt appears in the live preview instantly.</p>
+          </li>
+        </ol>
+
+        <div class="how-note">
+          <span aria-hidden="true">💡</span>
+          No POS app handy? The built-in demo buttons send a complete ESC/POS stream, including QR and cut.
+        </div>
+      </div>
+    </section>
+
+    <!-- Download -->
+    <section class="section" id="download">
+      <div class="container download-card">
+        <div>
+          <p class="eyebrow">Ready to print</p>
+          <h2>Download the emulator</h2>
+          <p class="download-copy">
+            Free, MIT-licensed and self-contained. About 44&nbsp;MB, portable, and safe to
+            run as a normal user — administrator rights are needed only when adding or
+            removing the virtual printer.
+          </p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="https://github.com/ZiadSafwat/EscPosEmulator/releases/latest/download/EscPosEmulator.exe">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 1 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.42l3.3 3.3V4a1 1 0 0 1 1-1zm-7 14a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1z"/></svg>
+              EscPosEmulator.exe
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/ZiadSafwat/EscPosEmulator/releases">All releases</a>
+          </div>
+          <p class="micro">Unsigned community build — if SmartScreen appears, choose <em>More info → Run anyway</em>.</p>
+        </div>
+        <ul class="checklist">
+          <li>Live preview + 37 hardware profiles</li>
+          <li>Arabic, Hebrew and UTF-8 receipts</li>
+          <li>Real Windows virtual printer (UAC once)</li>
+          <li>Forward to thermal printers or PDF</li>
+          <li>Settings saved to <code>%LOCALAPPDATA%</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section alt" id="faq">
+      <div class="container narrow">
+        <div class="section-head">
+          <p class="eyebrow">Questions</p>
+          <h2>Frequently asked</h2>
+        </div>
+
+        <details>
+          <summary>Is the ESC/POS emulator really free?</summary>
+          <p>Yes. It is open source under the MIT license — no account, no trial, no telemetry.</p>
+        </details>
+        <details>
+          <summary>Does it require .NET to be installed?</summary>
+          <p>No. The Windows release is a self-contained single-file executable. Just run <code>EscPosEmulator.exe</code>.</p>
+        </details>
+        <details>
+          <summary>Does it support Arabic receipts?</summary>
+          <p>Yes — Windows-1256, CP720 and UTF-8 with contextual shaping, bidi ordering and Arabic-capable fonts. Try the <strong>Send Arabic Demo</strong> button. If Arabic shows as dots, your POS is printing through the Windows <em>Generic / Text Only</em> driver, which strips non-CP437 characters before the emulator receives them.</p>
+        </details>
+        <details>
+          <summary>Will it work with my POS application?</summary>
+          <p>If the app can print to a Windows printer, or can send RAW ESC/POS to a network printer on port 9100, it works. Point it at the virtual printer or at <code>127.0.0.1:9100</code>.</p>
+        </details>
+        <details>
+          <summary>Can I print the preview to a real printer?</summary>
+          <p>Yes. Pick any installed Windows printer under <strong>Forward to a real printer</strong> and click <strong>Print Receipt</strong> — thermal, laser or Microsoft Print to PDF.</p>
+        </details>
+        <details>
+          <summary>Where are my settings stored?</summary>
+          <p>In <code>%LOCALAPPDATA%\EscPosEmulator\settings.json</code>. Delete the file to reset everything.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <a class="brand" href="./" aria-label="ESC/POS Emulator home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8V4h10v4"/><path d="M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1.2"/></svg>
+          </span>
+          <span class="brand-text">ESC/POS <span>Emulator</span></span>
+        </a>
+        <p class="footer-note">Test thermal receipts without burning paper.</p>
+      </div>
+
+      <nav aria-label="Footer">
+        <h3>Project</h3>
+        <a href="https://github.com/ZiadSafwat/EscPosEmulator">GitHub repository</a>
+        <a href="https://github.com/ZiadSafwat/EscPosEmulator/releases">Releases</a>
+        <a href="https://github.com/ZiadSafwat/EscPosEmulator/blob/main/README.md">Documentation</a>
+        <a href="https://github.com/ZiadSafwat/EscPosEmulator/blob/main/LICENSE">MIT License</a>
+      </nav>
+
+      <nav aria-label="Author links">
+        <h3>Author</h3>
+        <a href="https://github.com/ZiadSafwat">GitHub · @ZiadSafwat</a>
+        <a href="https://ziadsafwat.github.io/Ziad-Safwat-Portfolio/">Portfolio</a>
+        <a href="https://bmc.link/ziadsafwat1">Buy me a coffee</a>
+      </nav>
+    </div>
+    <div class="container footer-bottom">
+      <p>© <span id="year">2026</span> Ziad El-Araby · Built with .NET 8, Avalonia and SkiaSharp</p>
+      <p>Windows 10 / 11 · 64-bit</p>
+    </div>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

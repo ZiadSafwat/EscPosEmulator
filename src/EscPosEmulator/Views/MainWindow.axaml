@@ -169,7 +169,7 @@
     <!-- ═══════════════ LEFT PANEL ═══════════════ -->
     <Border Grid.Row="1" Grid.Column="0" Background="#232327"
             BorderBrush="#2E2E33" BorderThickness="0,0,1,0">
-      <ScrollViewer Padding="16,14" VerticalScrollBarVisibility="Auto">
+      <ScrollViewer Padding="16,14,16,32" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="12">
 
           <!-- Hardware profile -->
@@ -369,7 +369,7 @@
           </Border>
 
           <!-- Activity log -->
-          <Border Classes="card">
+          <Border Classes="card" Margin="0,0,0,10">
             <StackPanel Spacing="8">
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <Border Width="3" Height="13" CornerRadius="1.5" Background="#4EC9B0"
