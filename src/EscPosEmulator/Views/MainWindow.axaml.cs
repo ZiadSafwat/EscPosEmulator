@@ -23,7 +23,7 @@ public partial class MainWindow : Window
                 string paper = vm.SelectedPaperSize?.Name ?? "80 mm";
                 var dialogVm = new PrintingPreferencesViewModel(options, $"{paper} · 300 mm paper roll");
                 dialogVm.ConfigurePersistence(vm.Settings);
-                dialogVm.Completed += _ => vm.OnPrinterSettingsChanged();   // UI thread
+                dialogVm.Applied += _ => vm.OnPrinterSettingsChanged();   // OK / Apply only
                 _ = new PrintingPreferencesWindow(dialogVm).ShowDialog(this);
             };
         };

@@ -5,85 +5,163 @@
         x:Class="EscPosEmulator.Views.PrintingPreferencesWindow"
         x:DataType="vm:PrintingPreferencesViewModel"
         Title="XP-80C — Printing Preferences"
-        Width="560" Height="560"
-        MinWidth="480" MinHeight="440"
+        Width="600" Height="600"
+        MinWidth="520" MinHeight="480"
         WindowStartupLocation="CenterOwner"
         RequestedThemeVariant="Dark"
         Background="#1E1E1E">
+
+  <Window.Styles>
+    <!-- section titles inside cards -->
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="#4EC9B0"/>
+      <Setter Property="LetterSpacing" Value="1.2"/>
+    </Style>
+
+    <!-- field labels / hints -->
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Foreground" Value="#CCC"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Foreground" Value="#777"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+
+    <!-- cards -->
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="#2D2D30"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="14,12"/>
+    </Style>
+
+    <!-- numeric inputs -->
+    <Style Selector="TextBox">
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="MinHeight" Value="30"/>
+      <Setter Property="Padding" Value="8,4"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="HorizontalContentAlignment" Value="Right"/>
+    </Style>
+
+    <!-- buttons -->
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Padding" Value="16,6"/>
+      <Setter Property="MinWidth" Value="88"/>
+      <Setter Property="Background" Value="#3E3E42"/>
+      <Setter Property="Foreground" Value="#DDD"/>
+    </Style>
+    <Style Selector="Button.accent">
+      <Setter Property="Background" Value="#0E639C"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+
+    <!-- tabs -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="Padding" Value="14,7"/>
+      <Setter Property="MinHeight" Value="34"/>
+    </Style>
+  </Window.Styles>
+
   <Grid RowDefinitions="Auto,*,Auto">
 
-    <!-- header: device name + paper (app palette) -->
-    <Border Grid.Row="0" Background="#111111" BorderBrush="#333" BorderThickness="0,0,0,1">
-      <StackPanel Margin="16,12">
-        <StackPanel Orientation="Horizontal" Spacing="10">
-          <TextBlock Text="XP-80C" FontSize="18" FontWeight="SemiBold" Foreground="#E0E0E0"
-                     VerticalAlignment="Center"/>
-          <Border Background="#2D5A27" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
-            <TextBlock Text="print settings" FontSize="10" FontWeight="SemiBold" Foreground="#A5D6A7"/>
-          </Border>
+    <!-- ── header: device + paper ─────────────────────────────── -->
+    <Border Grid.Row="0" Background="#111111" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1"
+            Padding="18,14">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <Border Width="42" Height="42" CornerRadius="8" Background="#2D2D30"
+                VerticalAlignment="Center">
+          <TextBlock Text="🖨" FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+
+        <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="2" VerticalAlignment="Center">
+          <TextBlock Text="XP-80C" FontSize="17" FontWeight="SemiBold" Foreground="#F0F0F0"/>
+          <TextBlock Text="{Binding PaperLabel}" FontSize="12" Foreground="#888"/>
         </StackPanel>
-        <TextBlock Margin="0,2,0,0" Text="{Binding PaperLabel}" FontSize="12" Foreground="#888"/>
-      </StackPanel>
+
+        <Border Grid.Column="2" Background="#1B2E1B" CornerRadius="10" Padding="10,4"
+                VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Ellipse Width="7" Height="7" Fill="#5BBF6A" VerticalAlignment="Center"/>
+            <TextBlock Text="Virtual printer" FontSize="11" Foreground="#8FD49A"
+                       VerticalAlignment="Center"/>
+          </StackPanel>
+        </Border>
+      </Grid>
     </Border>
 
-    <!-- tab page content -->
-    <TabControl Grid.Row="1" Margin="12,10,12,4" Background="Transparent" SelectedIndex="0">
+    <!-- ── tabs ───────────────────────────────────────────────── -->
+    <TabControl Grid.Row="1" Margin="14,10,14,6" Background="Transparent" SelectedIndex="0">
 
-      <!-- ──────────────── LAYOUT ──────────────── -->
+      <!-- ════════════ LAYOUT ════════════ -->
       <TabItem Header="Layout">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Spacing="10" Margin="4,8,4,12">
+          <StackPanel Spacing="12" Margin="0,12,0,12">
 
-            <Border Background="#2D2D30" CornerRadius="8" Padding="12">
-              <StackPanel Spacing="6">
-                <TextBlock Text="PRINT ORDER" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12"
-                           LetterSpacing="1"/>
-                <RadioButton GroupName="PrintOrder" IsChecked="{Binding PrintOrderIsFrontToBack}"
-                             Content="Front to back" FontSize="13"/>
-                <RadioButton GroupName="PrintOrder" IsChecked="{Binding PrintOrderIsRightThenDown}"
-                             Content="Right, then down" Margin="20,0,0,0" FontSize="13"/>
+            <Border Classes="card">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="section" Text="PRINT ORDER"/>
+                <RadioButton GroupName="PrintOrder" FontSize="13"
+                             IsChecked="{Binding PrintOrderIsFrontToBack}"
+                             Content="Front to back"/>
+                <RadioButton GroupName="PrintOrder" FontSize="13" Margin="22,0,0,0"
+                             IsChecked="{Binding PrintOrderIsRightThenDown}"
+                             Content="Right, then down"/>
               </StackPanel>
             </Border>
 
-            <Border Background="#2D2D30" CornerRadius="8" Padding="12">
-              <StackPanel Spacing="6">
-                <TextBlock Text="DOCUMENT APPEARANCE" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12"
-                           LetterSpacing="1"/>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                  <TextBox Text="{Binding PageScale, StringFormat='{}{0:0.##}'}"
-                           Width="64" FontSize="13" HorizontalAlignment="Left"/>
-                  <TextBlock Text="×  page scale" VerticalAlignment="Center" FontSize="13" Foreground="#CCC"/>
-                  <TextBlock VerticalAlignment="Center" FontSize="11" Foreground="#666">
-                    0.5 – 4.0
-                  </TextBlock>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                  <TextBox Text="{Binding LineSpacing, StringFormat='{}{0}'}"
-                           Width="64" FontSize="13" HorizontalAlignment="Left"/>
-                  <TextBlock Text="line height (0 = follow the printer stream)"
-                             VerticalAlignment="Center" FontSize="13" Foreground="#CCC"/>
-                </StackPanel>
+            <Border Classes="card">
+              <StackPanel Spacing="12">
+                <TextBlock Classes="section" Text="DOCUMENT APPEARANCE"/>
+
+                <Grid ColumnDefinitions="150,96,*" RowDefinitions="Auto,Auto">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="Page scale"/>
+                  <TextBox Grid.Row="0" Grid.Column="1" Width="80" HorizontalAlignment="Left"
+                           Text="{Binding PageScale, StringFormat='{}{0:0.##}'}"/>
+                  <TextBlock Grid.Row="0" Grid.Column="2" Classes="hint"
+                             Text="50 % – 400 % of the receipt size"/>
+
+                  <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Margin="0,10,0,0"
+                             Text="Line height"/>
+                  <TextBox Grid.Row="1" Grid.Column="1" Width="80" HorizontalAlignment="Left"
+                           Margin="0,10,0,0"
+                           Text="{Binding LineSpacing, StringFormat='{}{0}'}"/>
+                  <TextBlock Grid.Row="1" Grid.Column="2" Classes="hint" Margin="0,10,0,0"
+                             Text="0 = follow the printer stream (0 – 99)"/>
+                </Grid>
               </StackPanel>
             </Border>
 
-            <Border Background="#2D2D30" CornerRadius="8" Padding="12">
-              <StackPanel Spacing="6">
-                <TextBlock Text="PAPER" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12"
-                           LetterSpacing="1"/>
-                <CheckBox Content="Draw paper edges and border"
-                          IsChecked="{Binding DrawBorders}" FontSize="13"/>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                  <TextBlock Text="Top margin:" VerticalAlignment="Center" FontSize="13" Foreground="#CCC"/>
-                  <TextBox Text="{Binding MarginTop, StringFormat='{}{0}'}" Width="64" FontSize="13"
-                           HorizontalAlignment="Left"/>
-                  <TextBlock Text="dots" VerticalAlignment="Center" FontSize="13" Foreground="#CCC"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                  <TextBlock Text="Left margin:" VerticalAlignment="Center" FontSize="13" Foreground="#CCC"/>
-                  <TextBox Text="{Binding MarginLeft, StringFormat='{}{0}'}" Width="64" FontSize="13"
-                           HorizontalAlignment="Left"/>
-                  <TextBlock Text="dots" VerticalAlignment="Center" FontSize="13" Foreground="#CCC"/>
-                </StackPanel>
+            <Border Classes="card">
+              <StackPanel Spacing="12">
+                <TextBlock Classes="section" Text="PAPER"/>
+
+                <CheckBox FontSize="13" IsChecked="{Binding DrawBorders}"
+                          Content="Draw paper edges and border"/>
+
+                <Grid ColumnDefinitions="150,96,*" RowDefinitions="Auto,Auto">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="Top margin"/>
+                  <TextBox Grid.Row="0" Grid.Column="1" Width="80" HorizontalAlignment="Left"
+                           Text="{Binding MarginTop, StringFormat='{}{0}'}"/>
+                  <TextBlock Grid.Row="0" Grid.Column="2" Classes="hint" Text="dots"/>
+
+                  <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Margin="0,10,0,0"
+                             Text="Left margin"/>
+                  <TextBox Grid.Row="1" Grid.Column="1" Width="80" HorizontalAlignment="Left"
+                           Margin="0,10,0,0"
+                           Text="{Binding MarginLeft, StringFormat='{}{0}'}"/>
+                  <TextBlock Grid.Row="1" Grid.Column="2" Classes="hint" Margin="0,10,0,0"
+                             Text="dots"/>
+                </Grid>
               </StackPanel>
             </Border>
 
@@ -91,30 +169,32 @@
         </ScrollViewer>
       </TabItem>
 
-      <!-- ──────────────── PAPER QUALITY ──────────────── -->
+      <!-- ════════════ PAPER QUALITY ════════════ -->
       <TabItem Header="Paper-Quality">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Spacing="10" Margin="4,8,4,12">
+          <StackPanel Spacing="12" Margin="0,12,0,12">
 
-            <Border Background="#2D2D30" CornerRadius="8" Padding="12">
-              <StackPanel Spacing="6">
-                <TextBlock Text="COPY" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12"
-                           LetterSpacing="1"/>
-                <TextBox Text="{Binding Copies, StringFormat='{}{0}'}" Width="100" FontSize="13"
-                         HorizontalAlignment="Left"/>
+            <Border Classes="card">
+              <StackPanel Spacing="12">
+                <TextBlock Classes="section" Text="COPY"/>
+                <Grid ColumnDefinitions="150,96,*">
+                  <TextBlock Grid.Column="0" Classes="label" Text="Copies per receipt"/>
+                  <TextBox Grid.Column="1" Width="80" HorizontalAlignment="Left"
+                           Text="{Binding Copies, StringFormat='{}{0}'}"/>
+                  <TextBlock Grid.Column="2" Classes="hint" Text="1 – 99 copies"/>
+                </Grid>
               </StackPanel>
             </Border>
 
-            <Border Background="#2D2D30" CornerRadius="8" Padding="12">
-              <StackPanel Spacing="6">
-                <TextBlock Text="HALFTONING" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12"
-                           LetterSpacing="1"/>
+            <Border Classes="card">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="section" Text="HALFTONING"/>
                 <ComboBox ItemsSource="{Binding HalftoningOptions}"
                           SelectedItem="{Binding Halftoning}"
                           Width="220" HorizontalAlignment="Left" FontSize="13"/>
-                <TextBlock Text="{Binding HalftoningCaption}" FontSize="11" Foreground="#888"/>
-                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#666"
-                           Text="Halftoning applies dithering to raster graphics (GS v bands and GDI prints) so 1-bit images keep shading instead of clipping."/>
+                <TextBlock Text="{Binding HalftoningCaption}" FontSize="12" Foreground="#9CDCFE"/>
+                <TextBlock Classes="hint"
+                           Text="Applies dithering to raster graphics (GS v bands and GDI prints) so 1-bit images keep their shading instead of clipping."/>
               </StackPanel>
             </Border>
 
@@ -122,36 +202,45 @@
         </ScrollViewer>
       </TabItem>
 
-      <!-- ──────────────── ADVANCED ──────────────── -->
+      <!-- ════════════ ADVANCED ════════════ -->
       <TabItem Header="Advanced">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Spacing="10" Margin="4,8,4,12">
+          <StackPanel Spacing="12" Margin="0,12,0,12">
 
-            <Border Background="#2D2D30" CornerRadius="8" Padding="12">
-              <StackPanel Spacing="8">
-                <TextBlock Text="DOCUMENT" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12"
-                           LetterSpacing="1"/>
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="section" Text="DOCUMENT"/>
+
                 <Border Background="#1E1E1E" BorderBrush="#333" BorderThickness="1" CornerRadius="6">
-                  <ListBox ItemsSource="{Binding AdvancedRows}" Background="Transparent" BorderThickness="0"
-                           SelectionMode="Single" MinHeight="60" Padding="0">
-                    <ListBox.ItemTemplate>
-                      <DataTemplate x:DataType="models:PropertyValue">
-                        <ListBoxItem Padding="0,0,0,0" Background="Transparent">
-                          <Grid ColumnDefinitions="200,*">
-                            <TextBlock Grid.Column="0" Text="{Binding Name}" Margin="10,6" FontSize="12"
-                                       Foreground="#CCC"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Value}" Margin="6,6,10,6" FontSize="12"
-                                       Foreground="#9CDCFE"/>
-                          </Grid>
-                        </ListBoxItem>
-                      </DataTemplate>
-                    </ListBox.ItemTemplate>
-                  </ListBox>
+                  <StackPanel>
+                    <Grid ColumnDefinitions="190,*" Margin="12,7,12,6">
+                      <TextBlock Grid.Column="0" Text="PROPERTY" FontSize="10" FontWeight="SemiBold"
+                                 Foreground="#666"/>
+                      <TextBlock Grid.Column="1" Text="VALUE" FontSize="10" FontWeight="SemiBold"
+                                 Foreground="#666"/>
+                    </Grid>
+                    <Rectangle Height="1" Fill="#333"/>
+                    <ItemsControl ItemsSource="{Binding AdvancedRows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:PropertyValue">
+                          <Border BorderBrush="#2A2A2E" BorderThickness="0,0,0,1">
+                            <Grid ColumnDefinitions="190,*" Margin="12,7">
+                              <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="12.5"
+                                         Foreground="#AAA"/>
+                              <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12.5"
+                                         Foreground="#9CDCFE"/>
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
                 </Border>
-                <Button Content="Properties…" HorizontalAlignment="Left" Padding="16,5" FontSize="13"
-                        Background="#3E3E42" Foreground="#CCC" CornerRadius="4"
+
+                <Button Content="Properties…" HorizontalAlignment="Left"
                         Command="{Binding OpenAdvancedPropertiesCommand}"/>
-                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#666"
+
+                <TextBlock Classes="hint"
                            Text="Advanced Document Settings control how the emulated paper is rendered. These settings are preview-only and are not part of the ESC/POS protocol."/>
               </StackPanel>
             </Border>
@@ -161,16 +250,21 @@
       </TabItem>
     </TabControl>
 
-    <!-- OK / Cancel / Apply -->
-    <Border Grid.Row="2" Background="#111111" BorderBrush="#333" BorderThickness="0,1,0,0">
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="12,8">
-        <Button Content="OK" Width="88" IsDefault="True" Command="{Binding OkCommand}"
-                Background="#0E639C" Foreground="White" Padding="0,6" CornerRadius="4"/>
-        <Button Content="Cancel" Width="88" IsCancel="True" Command="{Binding CancelCommand}"
-                Background="#3E3E42" Foreground="#CCC" Padding="0,6" CornerRadius="4"/>
-        <Button Content="Apply" Width="88" Command="{Binding OkCommand}"
-                Background="#3E3E42" Foreground="#CCC" Padding="0,6" CornerRadius="4"/>
-      </StackPanel>
+    <!-- ── footer: actions ────────────────────────────────────── -->
+    <Border Grid.Row="2" Background="#111111" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto" Margin="16,10">
+        <Button Content="Restore Defaults" HorizontalAlignment="Left"
+                Command="{Binding ResetCommand}"/>
+
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Classes="accent" Content="OK" Width="88" IsDefault="True"
+                  Command="{Binding OkCommand}"/>
+          <Button Content="Cancel" Width="88" IsCancel="True"
+                  Command="{Binding CancelCommand}"/>
+          <Button Content="Apply" Width="88"
+                  Command="{Binding ApplyCommand}"/>
+        </StackPanel>
+      </Grid>
     </Border>
 
   </Grid>

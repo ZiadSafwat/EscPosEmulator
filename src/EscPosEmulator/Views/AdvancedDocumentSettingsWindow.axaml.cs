@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using EscPosEmulator.ViewModels;
 
 namespace EscPosEmulator.Views;
@@ -11,5 +12,7 @@ public partial class AdvancedDocumentSettingsWindow : Window
         DataContext = viewModel;
     }
 
-    private void OnAccept(object sender, Avalonia.Interactivity.RoutedEventArgs e) => Close();
+    private void OnAccept(object? sender, RoutedEventArgs e) => Close();
+
+    private void OnCancel(object? sender, RoutedEventArgs e) => Close();
 }

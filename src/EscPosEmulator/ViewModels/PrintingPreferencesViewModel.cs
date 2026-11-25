@@ -32,6 +32,8 @@ public partial class PrintingPreferencesViewModel : ObservableObject
 
         OkCommand = new RelayCommand(Ok);
         CancelCommand = new RelayCommand(Cancel);
+        ApplyCommand = new RelayCommand(Apply);
+        ResetCommand = new RelayCommand(Reset);
         OpenAdvancedPropertiesCommand = new RelayCommand(OnOpenAdvancedProperties);
 
         LoadFrom(current);
@@ -57,6 +59,9 @@ public partial class PrintingPreferencesViewModel : ObservableObject
     /// <summary>Raised exactly once when the user hits OK, Cancel, or closes the window.</summary>
     public event Action<RenderOptions>? Completed;
 
+    /// <summary>Raised after OK / Apply copies the draft onto the live options (preview refresh).</summary>
+    public event Action<RenderOptions>? Applied;
+
     /// <summary>The live options instance (unchanged until OK is pressed).</summary>
     public RenderOptions CurrentOptions => _current;
 
@@ -74,6 +79,8 @@ public partial class PrintingPreferencesViewModel : ObservableObject
     // ── commands (observable so XAML binds {Binding OkCommand} etc.) ──
     [ObservableProperty] private IRelayCommand _okCommand;
     [ObservableProperty] private IRelayCommand _cancelCommand;
+    [ObservableProperty] private IRelayCommand _applyCommand;
+    [ObservableProperty] private IRelayCommand _resetCommand;
     [ObservableProperty] private IRelayCommand _openAdvancedPropertiesCommand;
 
     // ── editable draft values ───────────────────────────────────
@@ -125,17 +132,29 @@ public partial class PrintingPreferencesViewModel : ObservableObject
 
     // ── commands body ───────────────────────────────────────────
 
+    /// <summary>OK = Apply the draft, then close the dialog.</summary>
     private void Ok()
     {
-        // copy the draft onto the live instance used by the renderer
-        _current.Copies = Math.Clamp(Copies, 1, 99);
+        Apply();
+        Finish();
+    }
+
+    /// <summary>Cancel closes without touching the live options.</summary>
+    private void Cancel() => Finish();
+
+    /// <summary>Apply copies the draft onto the live options and persists, but keeps the dialog open.</summary>
+    private void Apply()
+    {
+        NormalizeDraft();
+
+        _current.Copies = Copies;
         _current.Halftoning = Halftoning;
         _current.PrintFrontToBack = PrintOrderIsFrontToBack;
         _current.DrawBorders = DrawBorders;
-        _current.PageScale = Math.Clamp(PageScale, 0.5, 4.0);
-        _current.LineSpacing = Math.Clamp(LineSpacing, 0, 99);
-        _current.MarginTop = Math.Clamp(MarginTop, 0, 120);
-        _current.MarginLeft = Math.Clamp(MarginLeft, 0, 60);
+        _current.PageScale = PageScale;
+        _current.LineSpacing = LineSpacing;
+        _current.MarginTop = MarginTop;
+        _current.MarginLeft = MarginLeft;
 
         // keep settings.json in sync with the live instance
         if (_settings is { } s)
@@ -144,10 +163,20 @@ public partial class PrintingPreferencesViewModel : ObservableObject
             AppSettings.Save(s);
         }
 
-        Finish();
+        Applied?.Invoke(_current);
     }
 
-    private void Cancel() => Finish();
+    /// <summary>Restore Defaults resets only the draft; nothing is applied until OK / Apply.</summary>
+    private void Reset() => LoadFrom(new RenderOptions());
+
+    private void NormalizeDraft()
+    {
+        Copies = Math.Clamp(Copies, 1, 99);
+        PageScale = Math.Clamp(PageScale, 0.5, 4.0);
+        LineSpacing = Math.Clamp(LineSpacing, 0, 99);
+        MarginTop = Math.Clamp(MarginTop, 0, 120);
+        MarginLeft = Math.Clamp(MarginLeft, 0, 60);
+    }
 
     /// <summary>Called by the window when the user closes it without OK / Cancel; behaves as Cancel.</summary>
     public void HandleWindowClosed() => Finish();
@@ -161,10 +190,24 @@ public partial class PrintingPreferencesViewModel : ObservableObject
     }
 
     private void OnOpenAdvancedProperties() =>
-        AdvancedPropertiesOpened?.Invoke(new AdvancedDocumentSettingsViewModel(_current));
+        AdvancedPropertiesOpened?.Invoke(new AdvancedDocumentSettingsViewModel(BuildDraft()));
 
     private void RefreshAdvancedRows() =>
-        AdvancedRows = new AdvancedDocumentSettingsViewModel(_current).Rows;
+        AdvancedRows = new AdvancedDocumentSettingsViewModel(BuildDraft()).Rows;
+
+    /// <summary>Snapshot of the draft values (clamped) for the summary grid / advanced dialog.</summary>
+    private RenderOptions BuildDraft() => new()
+    {
+        Copies = Math.Clamp(Copies, 1, 99),
+        Halftoning = Halftoning,
+        Landscape = _current.Landscape,
+        PrintFrontToBack = PrintOrderIsFrontToBack,
+        DrawBorders = DrawBorders,
+        PageScale = Math.Clamp(PageScale, 0.5, 4.0),
+        LineSpacing = Math.Clamp(LineSpacing, 0, 99),
+        MarginTop = Math.Clamp(MarginTop, 0, 120),
+        MarginLeft = Math.Clamp(MarginLeft, 0, 60),
+    };
 
     private static RenderOptions CloneOf(RenderOptions o) => new()
     {
