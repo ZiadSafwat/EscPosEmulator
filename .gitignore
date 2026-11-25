@@ -1,0 +1,22 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+*.DotSettings.user
+publish/
+artifacts/
+TestResults/
+
+## Rider / VS
+*.swp
+*.sln.DotSettings.user
+_ReSharper.Datum/
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store

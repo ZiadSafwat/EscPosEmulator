@@ -1,0 +1,235 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:EscPosEmulator.ViewModels"
+        xmlns:models="using:EscPosEmulator.Models"
+        x:Class="EscPosEmulator.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="ESC/POS Thermal Printer Emulator — v3"
+        Width="1280" Height="880"
+        MinWidth="980" MinHeight="660"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E1E">
+
+  <Design.DataContext>
+    <vm:MainViewModel/>
+  </Design.DataContext>
+
+  <Grid ColumnDefinitions="360,*" RowDefinitions="Auto,*,Auto">
+
+    <!-- Header -->
+    <Border Grid.ColumnSpan="2" Background="#111111" Padding="16,12" BorderBrush="#333" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <TextBlock Text="🖨  ESC/POS Emulator" FontSize="20" FontWeight="Bold" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+          <Border Background="#2D5A27" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+            <TextBlock Text="v3" FontSize="11" FontWeight="SemiBold" Foreground="#A5D6A7"/>
+          </Border>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+          <Border CornerRadius="10" Padding="10,3" Background="{Binding ServerBadgeBrush}">
+            <TextBlock Text="{Binding ServerBadgeText}" Foreground="White" FontSize="11" VerticalAlignment="Center"/>
+          </Border>
+          <TextBlock Text="{Binding StatusMessage}" Foreground="#888" FontSize="13"
+                     VerticalAlignment="Center" MaxWidth="480" TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Left Panel -->
+    <ScrollViewer Grid.Row="1" Grid.Column="0" Background="#252526" Padding="14">
+      <StackPanel Spacing="12">
+
+        <!-- Hardware profile -->
+        <Border Background="#2D2D30" CornerRadius="8" Padding="12">
+          <StackPanel Spacing="8">
+            <TextBlock Text="HARDWARE PROFILE" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12" LetterSpacing="1"/>
+            <ComboBox ItemsSource="{Binding Profiles}"
+                      SelectedItem="{Binding SelectedProfile}"
+                      HorizontalAlignment="Stretch"
+                      MaxDropDownHeight="360">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="models:PrinterProfile">
+                  <StackPanel>
+                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Notes}" Foreground="#888" FontSize="11" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Text="{Binding ProfileNotes}" Foreground="#9CDCFE" FontSize="11" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Virtual printer -->
+        <Border Background="#2D2D30" CornerRadius="8" Padding="12">
+          <StackPanel Spacing="8">
+            <TextBlock Text="VIRTUAL PRINTER" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12" LetterSpacing="1"/>
+            <TextBlock Text="Name your POS app prints to (e.g. test)" Foreground="#666" FontSize="11"/>
+            <TextBox Text="{Binding VirtualPrinterName}" Watermark="Printer name"
+                     HorizontalAlignment="Stretch"/>
+            <StackPanel Spacing="8">
+              <Button Content="＋ Install" Command="{Binding InstallVirtualPrinterCommand}"
+                      IsEnabled="{Binding !IsVirtualPrinterBusy}"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Background="#0E639C" Foreground="White" Padding="10,6" CornerRadius="4"/>
+              <Button Content="✕ Remove" Command="{Binding RemoveVirtualPrinterCommand}"
+                      IsEnabled="{Binding IsVirtualPrinterInstalled}"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Background="#C42B1C" Foreground="White" Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+            <TextBlock Text="{Binding VirtualPrinterStatus}" Foreground="#CE9178" FontSize="11" TextWrapping="Wrap"/>
+            <TextBlock Text="Creates a real Windows printer (Generic / Text Only → 127.0.0.1:port). One-time UAC. Rename = remove + install in the same prompt."
+                       Foreground="#555" FontSize="10" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <!-- System printer forwarding -->
+        <Border Background="#2D2D30" CornerRadius="8" Padding="12">
+          <StackPanel Spacing="8">
+            <TextBlock Text="FORWARD RECEIPT TO A REAL PRINTER" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12" LetterSpacing="1"/>
+            <ComboBox ItemsSource="{Binding SystemPrinters}"
+                      SelectedItem="{Binding SystemPrinterName}"
+                      HorizontalAlignment="Stretch"
+                      MaxDropDownHeight="280"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <Button Content="🖨 Print Receipt" Command="{Binding PrintToSystemCommand}"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Background="#0E639C" Foreground="White" Padding="10,6" CornerRadius="4"/>
+              <Button Grid.Column="1" Content="↻" Command="{Binding RefreshPrintersCommand}"
+                      ToolTip.Tip="Refresh printer list"
+                      Background="#3E3E42" Foreground="#CCC" Padding="10,6" Margin="6,0,0,0" CornerRadius="4"/>
+            </Grid>
+            <TextBlock Text="{Binding PrintStatus}" Foreground="#CE9178" FontSize="11" TextWrapping="Wrap"/>
+            <TextBlock Text="Examples: XP-80C · Microsoft Print to PDF · Generic / Text Only"
+                       Foreground="#555" FontSize="10" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Server -->
+        <Border Background="#2D2D30" CornerRadius="8" Padding="12">
+          <StackPanel Spacing="8">
+            <TextBlock Text="NETWORK SERVER" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12" LetterSpacing="1"/>
+            <Grid ColumnDefinitions="*,Auto,Auto">
+              <TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}" Watermark="Port"
+                       Width="80" HorizontalAlignment="Left"/>
+              <CheckBox Grid.Column="1" Content="LAN" IsChecked="{Binding ListenOnLan}" VerticalAlignment="Center"/>
+              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                <Button Content="Start" Command="{Binding StartServerCommand}"
+                        IsEnabled="{Binding !IsServerRunning}"
+                        Background="#0E639C" Foreground="White" Padding="14,6" CornerRadius="4"/>
+                <Button Content="Stop" Command="{Binding StopServerCommand}"
+                        IsEnabled="{Binding IsServerRunning}"
+                        Background="#C42B1C" Foreground="White" Padding="14,6" CornerRadius="4"/>
+              </StackPanel>
+            </Grid>
+            <TextBlock Text="{Binding ServerStatus}" Foreground="#9CDCFE" FontSize="13"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Paper Size -->
+        <Border Background="#2D2D30" CornerRadius="8" Padding="12">
+          <StackPanel Spacing="8">
+            <TextBlock Text="PAPER SIZE" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12" LetterSpacing="1"/>
+            <ComboBox ItemsSource="{Binding PaperSizes}"
+                      SelectedItem="{Binding SelectedPaperSize}"
+                      HorizontalAlignment="Stretch">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="models:PaperSize">
+                  <TextBlock Text="{Binding Name}"/>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <Button Content="+ Add Custom Size (72 mm)" Command="{Binding AddCustomSizeCommand}"
+                    HorizontalAlignment="Stretch" Background="#3E3E42" Foreground="#CCC" Padding="10,6" CornerRadius="4"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Code Page -->
+        <Border Background="#2D2D30" CornerRadius="8" Padding="12">
+          <StackPanel Spacing="8">
+            <TextBlock Text="CODE PAGE / LANGUAGE" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12" LetterSpacing="1"/>
+            <ComboBox ItemsSource="{Binding CodePages}"
+                      SelectedItem="{Binding SelectedCodePage}"
+                      HorizontalAlignment="Stretch"
+                      MaxDropDownHeight="280"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Actions -->
+        <Border Background="#2D2D30" CornerRadius="8" Padding="12">
+          <StackPanel Spacing="8">
+            <TextBlock Text="ACTIONS" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12" LetterSpacing="1"/>
+            <Button Content="☕  Send Demo Receipt" Command="{Binding SendDemoCommand}"
+                    HorizontalAlignment="Stretch" Background="#0E639C" Foreground="White" Padding="12,8" CornerRadius="4"/>
+            <Button Content="عربي  Send Arabic Demo" Command="{Binding SendArabicDemoCommand}"
+                    HorizontalAlignment="Stretch" Background="#2D5A27" Foreground="White" Padding="12,8" CornerRadius="4"/>
+            <Button Content="🗑  Clear Receipt" Command="{Binding ClearReceiptCommand}"
+                    HorizontalAlignment="Stretch" Background="#3E3E42" Foreground="#CCC" Padding="12,8" CornerRadius="4"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Log -->
+        <Border Background="#2D2D30" CornerRadius="8" Padding="12" MinHeight="120">
+          <StackPanel Spacing="6">
+            <TextBlock Text="ACTIVITY LOG" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12" LetterSpacing="1"/>
+            <TextBox x:Name="LogBox" Text="{Binding LogText}"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     FontFamily="Consolas,Courier New"
+                     FontSize="11"
+                     Background="#1E1E1E"
+                     Foreground="#CE9178"
+                     MinHeight="90"
+                     MaxHeight="180"
+                     BorderThickness="0"/>
+          </StackPanel>
+        </Border>
+
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Preview + Zoom -->
+    <Border Grid.Row="1" Grid.Column="1" Background="#1A1A1A" Padding="20">
+      <Grid RowDefinitions="Auto,*">
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="LIVE PREVIEW" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12" LetterSpacing="1" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding SelectedProfile.DisplayName, StringFormat='• {0}'}" Foreground="#888" FontSize="12" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding SelectedPaperSize.Name, StringFormat='• {0}'}" Foreground="#888" FontSize="12" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding JobCount, StringFormat='Jobs: {0}'}" Foreground="#666" FontSize="12" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding DrawerKickCount, StringFormat='Kicks: {0}'}" Foreground="#666" FontSize="12" VerticalAlignment="Center"/>
+          </StackPanel>
+
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+            <Button Content="−" Command="{Binding ZoomOutCommand}"
+                    Width="36" Background="#3E3E42" Foreground="White" CornerRadius="4"
+                    ToolTip.Tip="Zoom out"/>
+            <Button Content="{Binding ZoomLabel}" Command="{Binding ZoomResetCommand}"
+                    MinWidth="56" Background="#2D2D30" Foreground="#CCC" CornerRadius="4"
+                    ToolTip.Tip="Reset zoom to 100%"/>
+            <Button Content="+" Command="{Binding ZoomInCommand}"
+                    Width="36" Background="#3E3E42" Foreground="White" CornerRadius="4"
+                    ToolTip.Tip="Zoom in"/>
+          </StackPanel>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+          <Border Background="#2A2A2A" CornerRadius="6" Padding="16" HorizontalAlignment="Center" VerticalAlignment="Top">
+            <Image Source="{Binding PreviewImage}" Stretch="None" HorizontalAlignment="Center"/>
+          </Border>
+        </ScrollViewer>
+      </Grid>
+    </Border>
+
+    <!-- Footer -->
+    <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#111" Padding="16,8" BorderBrush="#333" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="TCP :9100  •  Virtual printer → Windows → emulator  •  One connection = one receipt"
+                   Foreground="#666" FontSize="12" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="1" Text="v3.0  •  .NET 8 + Avalonia" Foreground="#555" FontSize="12"/>
+      </Grid>
+    </Border>
+
+  </Grid>
+</Window>
