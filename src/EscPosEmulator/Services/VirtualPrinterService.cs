@@ -30,6 +30,57 @@ public sealed class VirtualPrinterService
 
     public static string PortNameFor(int port) => $"{PortPrefix}127.0.0.1_{port}";
 
+    /// <summary>
+    /// All printer driver names installed on the machine ("Printer Drivers"
+    /// under the spooler). Best-effort; empty list when unavailable.
+    /// </summary>
+    public static IReadOnlyList<string> GetInstalledDrivers()
+    {
+        if (!IsWindows) return Array.Empty<string>();
+        try
+        {
+            Microsoft.Win32.RegistryKey? key =
+                Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\PrintDrivers\amd64\3")
+                ?? Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\PrintDrivers\x64\3");
+            if (key == null) return Array.Empty<string>();
+
+            string[] names;
+            using (key)
+            {
+                names = key.GetSubKeyNames();
+            }
+            return names
+                   .Where(n => n != "DriverList")
+                   .Distinct(StringComparer.OrdinalIgnoreCase)
+                   .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                   .ToList();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    /// <summary>True when a printer driver with this exact name is installed.</summary>
+    public static bool DriverExists(string? driver)
+    {
+        if (!IsWindows) return false;
+        return GetInstalledDrivers().Any(d =>
+            string.Equals(d, driver, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Resolve the driver to actually install: the requested one when it is
+    /// present on the machine, otherwise fall back to the always-present
+    /// inbox "Generic / Text Only" (which passes raw bytes through).
+    /// </summary>
+    public static string ResolveDriver(string? requested) =>
+        !string.IsNullOrWhiteSpace(requested) && DriverExists(requested)
+            ? requested!.Trim()
+            : DriverName;
+
     /// <summary>Returns an error message, or null when the name is acceptable.</summary>
     public static string? ValidateName(string? name)
     {
@@ -100,19 +151,20 @@ public sealed class VirtualPrinterService
         }
     }
 
-    public async Task<(bool Ok, string Message)> InstallAsync(string name, int port)
+    public async Task<(bool Ok, string Message)> InstallAsync(string name, int port, string? driver = null)
     {
         if (!IsWindows)
             return (false, "Virtual system printers are only supported on Windows.");
         var err = ValidateName(name);
         if (err != null) return (false, err);
         if (port is < 1 or > 65535) return (false, "Invalid port.");
+        string useDriver = ResolveDriver(driver);
 
         string script = $@"
 $ErrorActionPreference = 'Stop'
 $name     = {PsQuote(name)}
 $portName = {PsQuote(PortNameFor(port))}
-$driver   = {PsQuote(DriverName)}
+$driver   = {PsQuote(useDriver)}
 
 # 1. make sure the TCP/IP port exists
 if (-not (Get-PrinterPort -Name $portName -ErrorAction SilentlyContinue)) {{
@@ -124,13 +176,18 @@ if (-not (Get-PrinterDriver -Name $driver -ErrorAction SilentlyContinue)) {{
     Add-PrinterDriver -Name $driver
 }}
 
-# 3. create or update the printer
+# 3. create or update the printer (rebuild when the driver changed)
 $existing = Get-Printer -Name $name -ErrorAction SilentlyContinue
 if ($existing) {{
     if ($existing.PortName -notlike '{PortPrefix}*') {{
         throw ""A different printer named '$name' already exists (not created by this tool). Pick another name.""
     }}
-    Set-Printer -Name $name -PortName $portName
+    if ($existing.DriverName -eq $driver) {{
+        Set-Printer -Name $name -PortName $portName
+    }} else {{
+        Remove-Printer -Name $name
+        Add-Printer -Name $name -DriverName $driver -PortName $portName
+    }}
 }} else {{
     Add-Printer -Name $name -DriverName $driver -PortName $portName
 }}
@@ -149,7 +206,8 @@ if ($existing) {{
     /// Rename = remove old + create new in ONE elevated call.
     /// Old name may not exist (then it is just an install).
     /// </summary>
-    public async Task<(bool Ok, string Message)> RenameAsync(string? oldName, string newName, int port)
+    public async Task<(bool Ok, string Message)> RenameAsync(string? oldName, string newName, int port,
+                                                              string? driver = null)
     {
         if (!IsWindows)
             return (false, "Virtual system printers are only supported on Windows.");
@@ -157,16 +215,17 @@ if ($existing) {{
         if (err != null) return (false, err);
         if (port is < 1 or > 65535) return (false, "Invalid port.");
         if (string.IsNullOrWhiteSpace(oldName))
-            return await InstallAsync(newName, port);
+            return await InstallAsync(newName, port, driver);
         if (string.Equals(oldName, newName, StringComparison.OrdinalIgnoreCase))
             return (true, "Printer already has that name.");
+        string useDriver = ResolveDriver(driver);
 
         string script = $@"
 $ErrorActionPreference = 'Stop'
 $old    = {PsQuote(oldName)}
 $name   = {PsQuote(newName)}
 $portName = {PsQuote(PortNameFor(port))}
-$driver   = {PsQuote(DriverName)}
+$driver   = {PsQuote(useDriver)}
 
 if (-not (Get-PrinterPort -Name $portName -ErrorAction SilentlyContinue)) {{
     Add-PrinterPort -Name $portName -PrinterHostAddress '127.0.0.1' -PortNumber {port}

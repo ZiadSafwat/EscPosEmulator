@@ -260,12 +260,46 @@ public sealed class TcpPrinterServer : IDisposable
 
             lock (_clientGate) _clients.Remove(client);
             if (total > 0)
-                EmitLog($"Job finished — {total} bytes received.");
+            {
+                var data = capture.ToArray();
+                EmitLog($"Job finished — {data.Length} bytes received.");
+                CheckForDotMangling(data);
+                try { CaptureJob(data, client); }
+                catch (Exception ex) { EmitLog($"Job capture failed: {ex.Message}"); }
+            }
             else
                 EmitLog("Client disconnected (no data).");
-            try { CaptureJob(capture.ToArray(), client); }
-            catch (Exception ex) { EmitLog($"Job capture failed: {ex.Message}"); }
             JobCompleted?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// Warns in the log when a received job looks like it was mangled by a
+    /// Windows text driver (Arabic replaced with '.' before reaching us), and
+    /// — when this machine has a real ESC/POS/thermal driver installed —
+    /// tells the user exactly what to pick instead.
+    /// </summary>
+    private void CheckForDotMangling(byte[] data)
+    {
+        try
+        {
+            var (mangled, explanation, dots) = PrinterScanner.DetectDotMangling(data);
+            if (!mangled) return;
+
+            EmitLog("⚠ " + explanation);
+
+            var best = PrinterScanner.FindBestEscPos();
+            if (best != null)
+                EmitLog($"   Fix: select the installed thermal printer '{best.Name}' " +
+                        $"(driver “{best.DriverName}”) as the virtual / forward target — it emits " +
+                        "raw CP1256 Arabic bytes instead of dots.");
+            else
+                EmitLog("   Fix: install the real driver for your physical printer " +
+                        "(Xprinter / Epson / STAR …) and print to that printer, not “Generic / Text Only”.");
+        }
+        catch
+        {
+            // detection is best-effort — never break a job over it
         }
     }
 

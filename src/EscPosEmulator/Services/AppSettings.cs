@@ -42,6 +42,14 @@ public sealed class AppSettings
     public string VirtualPrinterName { get; set; } = "";
 
     /// <summary>
+    /// Printer driver used when the virtual printer is (re)installed.
+    /// "" = always-present inbox "Generic / Text Only". A real thermal driver
+    /// (Xprinter / Epson / STAR …) can be selected, so a POS app that prints
+    /// Arabic keeps raw CP1256 bytes instead of dot-mangled ASCII.
+    /// </summary>
+    public string? VirtualPrinterDriver { get; set; }
+
+    /// <summary>
     /// System printer the preview is forwarded to via "Print Receipt"
     /// ("" = none). E.g. an installed thermal printer or "Microsoft Print to PDF".
     /// </summary>

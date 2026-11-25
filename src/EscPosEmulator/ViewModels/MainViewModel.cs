@@ -50,12 +50,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _systemPrinterName = "";
     [ObservableProperty] private string _printStatus = "";
     [ObservableProperty] private string _virtualPrinterName = "";
+    [ObservableProperty] private string _virtualPrinterDriver = "";
+    [ObservableProperty] private string _virtualPrinterDriverHint = "";
     [ObservableProperty] private string _virtualPrinterStatus = "";
     [ObservableProperty] private bool _isVirtualPrinterInstalled;
     [ObservableProperty] private bool _isVirtualPrinterBusy;
     [ObservableProperty] private string _serverBadgeText = "STOPPED";
     [ObservableProperty] private Avalonia.Media.IBrush _serverBadgeBrush =
         new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0xC4, 0x2B, 0x1C));
+
+    // ── Arabic / installed ESC-POS printer (auto-detected) ────────────────
+    // Best installed real thermal printer the app found on this machine.
+    [ObservableProperty] private string _escPosPrinterName = "";
+    [ObservableProperty] private bool _hasEscPosPrinter;
+    [ObservableProperty] private string _arabicAdvice = "";
 
     private static readonly Avalonia.Media.IBrush BadgeRunning =
         new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0x2D, 0x7A, 0x27));
@@ -65,6 +73,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<PaperSize> PaperSizes { get; } = new(PaperSize.Presets);
     public ObservableCollection<PrinterProfile> Profiles { get; } = new(PrinterProfile.All);
     public ObservableCollection<string> SystemPrinters { get; } = new();
+    public ObservableCollection<string> VirtualPrinterDrivers { get; } = new();
     public ObservableCollection<string> CodePages { get; } = new(EncodingHelper.Tables.Select(t => t.Label));
 
     public ICommand StartServerCommand { get; }
@@ -80,6 +89,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public ICommand RefreshPrintersCommand { get; }
     public ICommand InstallVirtualPrinterCommand { get; }
     public ICommand RemoveVirtualPrinterCommand { get; }
+    public ICommand SelectEscPosPrinterCommand { get; }
 
     public MainViewModel()
     {
@@ -101,6 +111,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _printRenderOptions.MarginLeft = _settings.PrinterSettings.MarginLeft;
 
         SystemPrinterName = _settings.ForwardPrinterName ?? "";
+        VirtualPrinterDriver = _settings.VirtualPrinterDriver ?? "";
         VirtualPrinterName = _settings.VirtualPrinterName ?? "";
 
         // Capture the table saved by the user before selecting a profile:
@@ -167,9 +178,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RefreshPrintersCommand = new RelayCommand(RefreshSystemPrinters);
         InstallVirtualPrinterCommand = new AsyncRelayCommand(InstallVirtualPrinterAsync);
         RemoveVirtualPrinterCommand = new AsyncRelayCommand(RemoveVirtualPrinterAsync);
+        SelectEscPosPrinterCommand = new RelayCommand(SelectEscPosPrinter);
 
         RefreshSystemPrinters();
         RefreshVirtualPrinterState();
+        UpdateArabicPrinterAdvice();
 
         StatusMessage = "Ready — type a printer name and click Install, then print to it from any app.";
         RefreshPrinterSettingsSummary();
@@ -577,6 +590,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
+        RefreshVirtualPrinterDrivers();
+
         IsVirtualPrinterInstalled = !string.IsNullOrWhiteSpace(VirtualPrinterName) &&
                                     _virtualPrinter.Exists(VirtualPrinterName);
 
@@ -585,6 +600,64 @@ public partial class MainViewModel : ObservableObject, IDisposable
             : IsVirtualPrinterInstalled
                 ? $"'{VirtualPrinterName}' is installed → {(ListenOnLan ? "0.0.0.0" : "127.0.0.1")}:{Port}"
                 : $"'{VirtualPrinterName}' is not installed yet";
+    }
+
+    /// <summary>
+    /// Fills the driver dropdown ("" = Generic / Text Only, then every
+    /// printer driver Windows has, with real thermal drivers marked with ✓)
+    /// and AUTO-SELECTS the best installed ESC/POS/thermal driver the first
+    /// time (the choice is then persisted, so a later manual pick — including
+    /// "Generic / Text Only" — always sticks).
+    /// </summary>
+    private void RefreshVirtualPrinterDrivers()
+    {
+        var installed = VirtualPrinterService.GetInstalledDrivers();
+        var thermalNames = installed
+            .Where(d => PrinterScanner.IsEscPos(d) && !PrinterScanner.IsTextDriver(d))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // null = not pinned yet (auto-pick); "" = explicitly "Generic / Text Only".
+        string? pinned = _settings.VirtualPrinterDriver;
+        if (pinned != null && pinned != "" && !installed.Contains(pinned))
+            pinned = null;   // the pinned driver was uninstalled → back to auto
+
+        string pick;
+        if (pinned == null)
+        {
+            // First run (or the saved driver is gone): prefer the driver
+            // attached to the best found ESC/POS printer, else first thermal.
+            var byPrinter = PrinterScanner.FindBestEscPos()?.DriverName;
+            pick = (byPrinter != null && installed.Contains(byPrinter))
+                ? byPrinter
+                : thermalNames.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).FirstOrDefault() ?? "";
+            _settings.VirtualPrinterDriver = pick;   // pin the auto choice
+            PersistSettings();
+        }
+        else
+        {
+            pick = pinned;
+        }
+
+        VirtualPrinterDriverHint = pinned == null ? "auto-selected" : "remembered";
+
+        var list = new List<string> { "" };
+        foreach (var d in installed)
+            list.Add(thermalNames.Contains(d) ? $"✓ {d}" : d);
+
+        // display form (thermal entries shown with the ✓ prefix)
+        string display = list.Contains($"✓ {pick}") ? $"✓ {pick}" : pick;
+
+        VirtualPrinterDrivers.Clear();
+        foreach (var d in list) VirtualPrinterDrivers.Add(d);
+        VirtualPrinterDriver = display;
+    }
+
+    partial void OnVirtualPrinterDriverChanged(string value)
+    {
+        // store the raw driver name (the dropdown prefixes thermal entries with "✓ ")
+        string raw = value ?? "";
+        _settings.VirtualPrinterDriver = raw.StartsWith("✓ ") ? raw[2..] : raw;
+        PersistSettings();
     }
 
     private async Task InstallVirtualPrinterAsync()
@@ -617,13 +690,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             VirtualPrinterStatus = "Waiting for administrator permission…";
             string name = VirtualPrinterName.Trim();
+            // raw driver name without the "✓ " display prefix ("" = Generic / Text Only)
+            string drv = VirtualPrinterDriver ?? "";
+            string driver = drv.StartsWith("✓ ") ? drv[2..] : drv;
 
             (bool Ok, string Message) result =
                 _virtualPrinter.Exists(name)
                     // already our printer but port/name may differ → rename path:
                     // remove + install happen inside ONE elevated (UAC) call
-                    ? await _virtualPrinter.RenameAsync(name, name, Port)
-                    : await _virtualPrinter.InstallAsync(name, Port);
+                    ? await _virtualPrinter.RenameAsync(name, name, Port, driver)
+                    : await _virtualPrinter.InstallAsync(name, Port, driver);
 
             if (result.Ok && _settings.AutoStartOnInstall && !_server.IsRunning)
                 await _server.StartAsync(Port);     // a printer nobody listens to is useless
@@ -710,6 +786,81 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             PrintStatus = $"Printer list error: {ex.Message}";
         }
+
+        UpdateArabicPrinterAdvice();
+    }
+
+    // ───────────────────────── Arabic / ESC-POS auto-detect ─────────────────────────
+
+    /// <summary>
+    /// Re-evaluates the Arabic-printer situation: finds the best installed
+    /// real ESC/POS/thermal driver and decides what advice to show. Safe to
+    /// call on the UI thread — the scan touches the spooler registry only.
+    /// </summary>
+    private void UpdateArabicPrinterAdvice()
+    {
+        if (!PrinterScanner.IsWindows)
+        {
+            HasEscPosPrinter = false;
+            EscPosPrinterName = "";
+            ArabicAdvice = "";
+            return;
+        }
+
+        var printers = PrinterScanner.Scan();
+        EscPosPrinterName = PrinterScanner.FindBestEscPos(printers)?.Name ?? "";
+        HasEscPosPrinter = !string.IsNullOrEmpty(EscPosPrinterName);
+
+        bool targetingTextDriver =
+            !string.IsNullOrWhiteSpace(SystemPrinterName) &&
+            SystemPrinters.Contains(SystemPrinterName) &&
+            printers.FirstOrDefault(p => string.Equals(p.Name, SystemPrinterName,
+                                                        StringComparison.OrdinalIgnoreCase))?.Kind
+                        is PrinterKind.TextDriver;
+
+        if (targetingTextDriver && HasEscPosPrinter)
+        {
+            ArabicAdvice =
+                "“Generic / Text Only” mangles Arabic into dots on the way in. " +
+                $"A real thermal printer is installed ({EscPosPrinterName}) — switch to it.";
+        }
+        else if (targetingTextDriver && !HasEscPosPrinter)
+        {
+            ArabicAdvice =
+                "“Generic / Text Only” turns Arabic into dots. No thermal driver " +
+                "installed — install the real driver for your physical printer.";
+        }
+        else if (HasEscPosPrinter)
+        {
+            ArabicAdvice = $"Thermal printer installed: {EscPosPrinterName} (Arabic-safe).";
+        }
+        else
+        {
+            ArabicAdvice = "No thermal (ESC/POS) driver installed on this machine.";
+        }
+    }
+
+    /// <summary>
+    /// One-click: point the "Print Receipt" (forward) target at the detected
+    /// real thermal driver, so receipts are emitted as true ESC/POS bytes with
+    /// real CP1256 Arabic instead of dots.
+    ///
+    /// Note: the *virtual* printer (top card) must KEEP the Generic/Text-Only →
+    /// TCP/IP design — that is what lets an external POS app pipe its stream
+    /// into this emulator. Only the forward target changes.
+    /// </summary>
+    private void SelectEscPosPrinter()
+    {
+        if (!HasEscPosPrinter)
+        {
+            StatusMessage = "No installed ESC/POS / thermal printer to select.";
+            return;
+        }
+
+        SystemPrinterName = EscPosPrinterName;   // forward target → real driver
+        UpdateArabicPrinterAdvice();
+        StatusMessage = $"Print target set to '{EscPosPrinterName}' (real thermal driver — Arabic-safe).";
+        AppendLog($"Auto-selected installed ESC/POS printer: {EscPosPrinterName}");
     }
 
     private void PrintToSystemPrinter()

@@ -250,6 +250,16 @@
               <TextBox Text="{Binding VirtualPrinterName}" Watermark="Printer name"
                        HorizontalAlignment="Stretch"/>
 
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Classes="field" Text="DRIVER (AUTO-DETECTED)"
+                           VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                <TextBlock Grid.Column="1" Classes="field" Margin="0,0,0,4"
+                           Text="{Binding VirtualPrinterDriverHint}"/>
+              </Grid>
+              <ComboBox ItemsSource="{Binding VirtualPrinterDrivers}"
+                        SelectedItem="{Binding VirtualPrinterDriver}"
+                        HorizontalAlignment="Stretch" MaxDropDownHeight="320"/>
+
               <Grid ColumnDefinitions="*,*">
                 <Button Classes="primary" Content="＋ Install" Margin="0,0,4,0"
                         Command="{Binding InstallVirtualPrinterCommand}"
@@ -262,7 +272,7 @@
               <TextBlock Text="{Binding VirtualPrinterStatus}" Foreground="#CE9178" FontSize="11"
                          TextWrapping="Wrap"/>
               <TextBlock Classes="muted"
-                         Text="Creates a real Windows printer (Generic / Text Only → 127.0.0.1:port). One-time UAC. Rename = remove + install in the same prompt."/>
+                         Text="Creates a real Windows printer (driver → 127.0.0.1:port). The driver is auto-detected from your installed printers — pick a thermal driver (✓) so Arabic stays intact. One-time UAC."/>
             </StackPanel>
           </Border>
 
@@ -335,6 +345,27 @@
                         SelectedItem="{Binding SystemPrinterName}"
                         HorizontalAlignment="Stretch"
                         MaxDropDownHeight="280"/>
+
+              <!-- Arabic / installed ESC-POS printer (auto-detected) -->
+              <Border Background="#1C1C20" CornerRadius="6" Padding="10,8"
+                      IsVisible="{Binding HasEscPosPrinter}"
+                      Margin="0,2,0,0">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="🔥 Thermal printer installed (Arabic-safe)"
+                             Foreground="#4EC9B0" FontSize="11.5"/>
+                  <TextBlock Text="{Binding EscPosPrinterName}"
+                             Foreground="#CE9178" FontSize="11" TextWrapping="Wrap"
+                             FontFamily="Consolas"/>
+                  <TextBlock Classes="muted" FontSize="10.5" TextWrapping="Wrap"
+                             Text="“Generic / Text Only” mangles Arabic into dots. Select the thermal printer to print real Arabic."/>
+                  <Button Classes="ghost" Content="✓ Use this printer for Print Receipt"
+                          Command="{Binding SelectEscPosPrinterCommand}"
+                          HorizontalAlignment="Stretch"/>
+                </StackPanel>
+              </Border>
+
+              <!-- Advice (empty string = hidden) -->
+              <TextBlock Text="{Binding ArabicAdvice}" Foreground="#4EC9B0" FontSize="11" TextWrapping="Wrap"/>
 
               <Grid ColumnDefinitions="*,Auto">
                 <Button Classes="primary" Content="🖨  Print Receipt" Margin="0,0,4,0"
