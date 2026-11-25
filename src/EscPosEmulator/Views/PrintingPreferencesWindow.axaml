@@ -1,0 +1,143 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:EscPosEmulator.Models;assembly=EscPosEmulator"
+        xmlns:vm="clr-namespace:EscPosEmulator.ViewModels;assembly=EscPosEmulator"
+        x:Class="EscPosEmulator.Views.PrintingPreferencesWindow"
+        x:DataType="vm:PrintingPreferencesViewModel"
+        Title="XP-80C — Printing Preferences"
+        Width="560" Height="560"
+        MinWidth="480" MinHeight="440"
+        WindowStartupLocation="CenterOwner"
+        RequestedThemeVariant="Light"
+        Background="#F0F0F0">
+  <Grid RowDefinitions="Auto,*,Auto">
+
+    <!-- header: device name + paper (Windows preferences style) -->
+    <Border Grid.Row="0" Background="#E4E4E4" BorderBrush="#C0C0C0" BorderThickness="0,0,0,1">
+      <StackPanel Margin="16,12">
+        <TextBlock Text="XP-80C" FontSize="18" FontWeight="SemiBold" Foreground="#111"/>
+        <TextBlock Margin="0,2,0,0" Text="{Binding PaperLabel}" FontSize="12" Foreground="#555"/>
+      </StackPanel>
+    </Border>
+
+    <!-- tab page content -->
+    <TabControl Grid.Row="1" Margin="12,10,12,4" Background="Transparent" SelectedIndex="0">
+
+      <!-- ──────────────── LAYOUT ──────────────── -->
+      <TabItem Header="Layout">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="16" Margin="16,8,16,16">
+          <StackPanel Spacing="6">
+            <TextBlock Text="Print order" FontWeight="SemiBold" FontSize="13"/>
+            <RadioButton GroupName="PrintOrder" IsChecked="{Binding PrintOrderIsFrontToBack}"
+                         Content="Front to back" FontSize="13"/>
+            <RadioButton GroupName="PrintOrder" IsChecked="{Binding PrintOrderIsRightThenDown}"
+                         Content="Right, then down" Margin="20,0,0,0" FontSize="13"/>
+          </StackPanel>
+
+          <Rectangle Height="1" Fill="#D0D0D0" Margin="0,4"/>
+
+          <StackPanel Spacing="6">
+            <TextBlock Text="Document Appearance" FontWeight="SemiBold" FontSize="13"/>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBox Text="{Binding PageScale, StringFormat='{}{0:0.##}'}"
+                       Width="64" FontSize="13" HorizontalAlignment="Left"/>
+              <TextBlock Text="×  page scale" VerticalAlignment="Center" FontSize="13" Foreground="#333"/>
+              <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="11" Foreground="#666">
+                0.5 – 4.0
+              </TextBlock>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBox Text="{Binding LineSpacing, StringFormat='{}{0}'}"
+                       Width="64" FontSize="13" HorizontalAlignment="Left"/>
+              <TextBlock Text="line height (0 = follow the printer stream)"
+                         VerticalAlignment="Center" FontSize="13" Foreground="#333"/>
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Spacing="8">
+            <TextBlock Text="Paper" FontWeight="SemiBold" FontSize="13"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <CheckBox Content="Draw paper edges and border"
+                        IsChecked="{Binding DrawBorders}" FontSize="13"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Top margin:" VerticalAlignment="Center" FontSize="13" Foreground="#333"/>
+              <TextBox Text="{Binding MarginTop, StringFormat='{}{0}'}" Width="64" FontSize="13"
+                       HorizontalAlignment="Left"/>
+              <TextBlock Text="dots" VerticalAlignment="Center" FontSize="13" Foreground="#333"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Left margin:" VerticalAlignment="Center" FontSize="13" Foreground="#333"/>
+              <TextBox Text="{Binding MarginLeft, StringFormat='{}{0}'}" Width="64" FontSize="13"
+                       HorizontalAlignment="Left"/>
+              <TextBlock Text="dots" VerticalAlignment="Center" FontSize="13" Foreground="#333"/>
+            </StackPanel>
+          </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ──────────────── PAPER QUALITY ──────────────── -->
+      <TabItem Header="Paper-Quality">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="16" Margin="16,8,16,16">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Copy" FontWeight="SemiBold" FontSize="13"/>
+            <TextBox Text="{Binding Copies, StringFormat='{}{0}'}" Width="100" FontSize="13"
+                     HorizontalAlignment="Left"/>
+          </StackPanel>
+
+          <StackPanel Spacing="8">
+            <TextBlock Text="Halftoning" FontWeight="SemiBold" FontSize="13"/>
+            <ComboBox ItemsSource="{Binding HalftoningOptions}"
+                      SelectedItem="{Binding Halftoning}"
+                      Width="220" HorizontalAlignment="Left" FontSize="13"/>
+            <TextBlock Text="{Binding HalftoningCaption}" FontSize="11" Foreground="#666"/>
+          </StackPanel>
+
+          <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#666"
+                     Text="Halftoning applies dithering to raster graphics (GS v bands and GDI prints) so 1-bit images keep shading instead of clipping."/>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ──────────────── ADVANCED ──────────────── -->
+      <TabItem Header="Advanced">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="12" Margin="16,8,16,16">
+          <TextBlock Text="Document" FontWeight="SemiBold" FontSize="13"/>
+          <Border Background="White" BorderBrush="#C0C0C0" BorderThickness="1">
+            <ListBox ItemsSource="{Binding AdvancedRows}" Background="White" BorderThickness="0"
+                     SelectionMode="Single" MinHeight="60" Padding="0">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="models:PropertyValue">
+                  <ListBoxItem Padding="0,0,0,0" Foreground="#111">
+                    <Grid ColumnDefinitions="220,*">
+                      <TextBlock Grid.Column="0" Text="{Binding Name}" Margin="8,6" FontSize="12"/>
+                      <TextBlock Grid.Column="1" Text="{Binding Value}" Margin="8,6" FontSize="12" Foreground="#333"/>
+                    </Grid>
+                  </ListBoxItem>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Border>
+          <Button Content="Properties…" HorizontalAlignment="Left" Padding="16,5" FontSize="13"
+                  Command="{Binding OpenAdvancedPropertiesCommand}"/>
+          <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#666"
+                     Text="Advanced Document Settings control how the emulated paper is rendered. These settings are preview-only and are not part of the ESC/POS protocol."/>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+
+    <!-- OK / Cancel / Apply -->
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="12">
+      <Button Content="OK" Width="88" IsDefault="True" Command="{Binding OkCommand}"/>
+      <Button Content="Cancel" Width="88" IsCancel="True" Command="{Binding CancelCommand}"/>
+      <Button Content="Apply" Width="88" Command="{Binding OkCommand}"/>
+    </StackPanel>
+
+  </Grid>
+</Window>

@@ -120,7 +120,7 @@ public sealed class ReceiptRenderer
     }
 
     /// <summary>Renders the document. Never throws — returns a placeholder bitmap on failure.</summary>
-    public SKBitmap Render(ReceiptDocument? doc, PaperSize? paper, int scale = 2)
+    public SKBitmap Render(ReceiptDocument? doc, PaperSize? paper, int scale = 2, RenderOptions? options = null)
     {
         try
         {
@@ -135,9 +135,10 @@ public sealed class ReceiptRenderer
             float contentH = 0;
             foreach (var el in elements)
                 if (el != null)
-                    contentH += Measure(el, printable, scale);
+                    contentH += Measure(el, printable, scale, options);
 
-            int contentPx = (int)Math.Ceiling(contentH) + 30;          // top + bottom breathing room
+            int marginTop = Math.Clamp(options?.MarginTop ?? 30, 0, 120);
+            int contentPx = (int)Math.Ceiling(contentH) + marginTop;   // top breathing room
             int width = Math.Clamp(printable * scale, 100, 4000);
             int height = Math.Clamp(contentPx + Pad * 2 - Margin, 200, 20000);
             int bmpW = width + Pad * 2;
@@ -153,17 +154,20 @@ public sealed class ReceiptRenderer
             using var paperPaint = new SKPaint { Color = new SKColor(250, 250, 245), IsAntialias = true };
             canvas.DrawRoundRect(Pad / 2f, Pad / 2f, Pad / 2f + width + Pad, Pad / 2f + height, 6, 6, paperPaint);
 
-            using var borderPaint = new SKPaint
+            if (options?.DrawBorders ?? true)
             {
-                Color = new SKColor(180, 180, 180),
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 1,
-                IsAntialias = true
-            };
-            canvas.DrawRoundRect(Pad / 2f, Pad / 2f, Pad / 2f + width + Pad, Pad / 2f + height, 6, 6, borderPaint);
+                using var borderPaint = new SKPaint
+                {
+                    Color = new SKColor(180, 180, 180),
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = 1,
+                    IsAntialias = true
+                };
+                canvas.DrawRoundRect(Pad / 2f, Pad / 2f, Pad / 2f + width + Pad, Pad / 2f + height, 6, 6, borderPaint);
+            }
 
             // ── pass 2: draw ──────────────────────────────────────────
-            float y = Pad / 2f + 30f;
+            float y = Pad / 2f + marginTop;
             foreach (var el in elements)
             {
                 if (el == null) continue;
@@ -171,10 +175,10 @@ public sealed class ReceiptRenderer
                 {
                     switch (el)
                     {
-                        case TextLineElement t: y = DrawText(canvas, t, y, printable, scale); break;
+                        case TextLineElement t: y = DrawText(canvas, t, y, printable, scale, options); break;
                         case QrCodeElement q:   y = DrawQr(canvas, q, y, printable, scale); break;
                         case BarcodeElement b:  y = DrawBarcode(canvas, b, y, printable, scale); break;
-                        case ImageElement i:    y = DrawImage(canvas, i, y, printable, scale); break;
+                        case ImageElement i:    y = DrawImage(canvas, i, y, printable, scale, options); break;
                         case CutElement c:      y = DrawCut(canvas, c, y, printable, scale); break;
                         case FeedElement f:     y += Math.Max(0, f.HeightDots) * scale; break;
                     }
@@ -210,9 +214,9 @@ public sealed class ReceiptRenderer
     }
 
     // Exact pixel advance for one element (used by pass 1 *and* mirroring pass 2).
-    private float Measure(ReceiptElement el, int printable, int scale) => el switch
+    private static float Measure(ReceiptElement el, int printable, int scale, RenderOptions? options) => el switch
     {
-        TextLineElement t => t.HeightDots * scale + 4,
+        TextLineElement t => TextLineHeight(t, options) * scale + 4,
         QrCodeElement q => Math.Min(Math.Max(1, q.RenderedDots), (int)(printable * 0.7f)) * scale + 10,
         BarcodeElement b => (b.Height + 24) * scale + 8,
         ImageElement i =>
@@ -222,10 +226,14 @@ public sealed class ReceiptRenderer
         _ => 20
     };
 
-    private float DrawText(SKCanvas canvas, TextLineElement el, float y, int printable, int scale)
+    private static int TextLineHeight(TextLineElement el, RenderOptions? options)
+        => (options?.LineSpacing > 0 ? options.LineSpacing * 18 : el.HeightDots);
+
+    private float DrawText(SKCanvas canvas, TextLineElement el, float y, int printable, int scale, RenderOptions? options)
     {
         string text = el.Text ?? "";
-        float fontSize = 12f * scale;
+        float extraLeft = (options?.MarginLeft ?? 0) * scale;
+        float fontSize = (float)(12f * Math.Clamp(options?.PageScale ?? 1.0, 0.5, 4.0) * scale);
         if (el.Style.Size is CharacterSize.DoubleHeight or CharacterSize.DoubleWidthHeight)
             fontSize *= 1.8f;
 
@@ -247,10 +255,10 @@ public sealed class ReceiptRenderer
             FakeBoldText = el.Style.Bold
         };
 
-        float maxW = printable * scale;
+        float maxW = Math.Max(Margin, printable * scale - extraLeft);
         float baseline = y + fontSize;
         float textWidth;
-        float x = Margin;
+        float x = Margin + extraLeft;
 
         if (rtl)
         {
@@ -271,10 +279,10 @@ public sealed class ReceiptRenderer
             switch (el.Style.Alignment)
             {
                 case TextAlign.Center:
-                    x = Margin + Math.Max(0, (maxW - textWidth) / 2);
+                    x = Margin + extraLeft + Math.Max(0, (maxW - textWidth) / 2);
                     break;
                 case TextAlign.Right:
-                    x = Margin + Math.Max(0, maxW - textWidth);
+                    x = Margin + extraLeft + Math.Max(0, maxW - textWidth);
                     break;
             }
 
@@ -300,10 +308,10 @@ public sealed class ReceiptRenderer
             switch (el.Style.Alignment)
             {
                 case TextAlign.Center:
-                    x = Margin + Math.Max(0, (maxW - textWidth) / 2);
+                    x = Margin + extraLeft + Math.Max(0, (maxW - textWidth) / 2);
                     break;
                 case TextAlign.Right:
-                    x = Margin + Math.Max(0, maxW - textWidth);
+                    x = Margin + extraLeft + Math.Max(0, maxW - textWidth);
                     break;
             }
 
@@ -328,7 +336,7 @@ public sealed class ReceiptRenderer
             canvas.DrawLine(x, baseline + 3, x + Math.Max(4, textWidth), baseline + 3, under);
         }
 
-        return y + Math.Max(1, el.HeightDots) * scale + 4;
+        return y + Math.Max(1, TextLineHeight(el, options)) * scale + 4;
     }
 
     private static float ShapeWidth(SKShaper shaper, string text, SKPaint paint)
@@ -529,7 +537,7 @@ public sealed class ReceiptRenderer
         }
     }
 
-    private float DrawImage(SKCanvas canvas, ImageElement img, float y, int printable, int scale)
+    private float DrawImage(SKCanvas canvas, ImageElement img, float y, int printable, int scale, RenderOptions? options)
     {
         if (img.WidthDots <= 0 || img.HeightDotsValue <= 0 || img.BitmapData == null || img.BitmapData.Length == 0)
             return y + 20;
@@ -562,6 +570,16 @@ public sealed class ReceiptRenderer
             using var bmp = new SKBitmap(info);
             Marshal.Copy(pixels, 0, bmp.GetPixels(), pixels.Length);
 
+            // Halftoning for 1-bit raster bands: "Dots" snaps each 2×2 cell
+            // to its ink coverage (coarse dot screen, like an ordered
+            // halftone); "Smooth" applies Floyd–Steinberg error diffusion
+            // so the 1-bit ramp is converted to smooth gray levels.
+            switch (options?.Halftoning)
+            {
+                case HalftoningMode.Dots:  Dither(bmp, HalftoningMode.Dots); break;
+                case HalftoningMode.Smooth: Dither(bmp, HalftoningMode.Smooth); break;
+            }
+
             float w = Math.Min(wpx, printable) * scale;
             float h = hpx * (w / Math.Max(1, wpx));
             float x = Margin + (printable * scale - w) / 2;
@@ -572,6 +590,89 @@ public sealed class ReceiptRenderer
         {
             return y + 20;
         }
+    }
+
+    /// <summary>
+    /// Halftoning of 1-bit raster bands:
+    ///  • Dots — ordered 2×2 clusters: each cell's ink coverage (0–4) becomes
+    ///    a solid gray level (coarse dot screen, the classic halftone look).
+    ///  • Smooth — Floyd–Steinberg error diffusion into 1-bit output
+    ///    (fine, naturally scattered dots — smoother gradients).
+    /// </summary>
+    private static void Dither(SKBitmap bmp, HalftoningMode mode)
+    {
+        int w = bmp.Width, h = bmp.Height;
+        if (w < 2 || h < 2) return;
+
+        byte[] src = new byte[w * h];       // 0 / 255 per pixel
+        {
+            var raw = new byte[w * h * 4];
+            Marshal.Copy(bmp.GetPixels(), raw, 0, raw.Length);
+            for (int i = 0; i < src.Length; i++)
+                src[i] = raw[i * 4 + 2] < 128 ? (byte)0 : (byte)255;     // R channel
+        }
+
+        var dst = new byte[w * h];
+        if (mode == HalftoningMode.Dots)
+        {
+            // 2×2 coverage → 5 gray levels
+            for (int row = 0; row < h / 2; row++)
+            {
+                int r = row * 2;
+                for (int col = 0; col < w / 2; col++)
+                {
+                    int c = col * 2;
+                    int ink = 0;
+                    for (int dy = 0; dy < 2; dy++)
+                        for (int dx = 0; dx < 2; dx++)
+                        {
+                            int i = (r + dy) * w + c + dx;
+                            if (src[i] < 128) ink++;
+                        }
+                    byte v = (byte)(255 - ink * 51);
+                    for (int dy = 0; dy < 2; dy++)
+                        for (int dx = 0; dx < 2; dx++)
+                        {
+                            int i = (r + dy) * w + c + dx;
+                            dst[i] = v;
+                        }
+                }
+            }
+            if (h % 2 == 1) Array.Copy(src, (h - 1) * w, dst, (h - 1) * w, w);
+            if (w % 2 == 1)
+                for (int y = 0; y < h; y++) dst[y * w + w - 1] = src[y * w + w - 1];
+        }
+        else // Smooth — Floyd–Steinberg into 1-bit out
+        {
+            var err = new float[w * h];
+            Array.Copy(src, 0, err, 0, src.Length);
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    int i = y * w + x;
+                    int v = Math.Clamp((int)Math.Round(err[i]), 0, 255);
+                    int old = v > 127 ? 255 : 0;                 // threshold to 1-bit
+                    dst[i] = (byte)old;
+                    int e = v - old;                             // quantization error
+                    if (x + 1 < w) err[i + 1] += e * 7f / 16f;
+                    if (y + 1 < h)
+                    {
+                        if (x > 0)    err[i + w - 1] += e * 3f / 16f;   // (x-1, y+1)
+                        if (x + 1 < w) err[i + w + 1] += e * 1f / 16f;  // (x+1, y+1)
+                        err[i + w] += e * 5f / 16f;                     // (x,   y+1)
+                    }
+                }
+        }
+
+        var pixels = new byte[w * h * 4];
+        for (int i = 0; i < w * h; i++)
+        {
+            byte v = dst[i];
+            int p = i * 4;
+            pixels[p] = pixels[p + 1] = pixels[p + 2] = v;
+            pixels[p + 3] = 255;
+        }
+        Marshal.Copy(pixels, 0, bmp.GetPixels(), pixels.Length);
     }
 
     private float DrawCut(SKCanvas canvas, CutElement cut, float y, int printable, int scale)

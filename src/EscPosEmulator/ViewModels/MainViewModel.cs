@@ -23,7 +23,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly AppSettings _settings;
 
     private SKBitmap? _lastSkBitmap;   // keep last render for zoom re-scaling
+    private readonly RenderOptions _printRenderOptions = new();
     private readonly DispatcherTimer _previewDebounce;
+
+    /// <summary>Render options the preview is built with (updated from the UI).</summary>
+    public RenderOptions PrintRenderOptions => _printRenderOptions;
 
     [ObservableProperty] private Bitmap? _previewImage;
     [ObservableProperty] private string _serverStatus = "Stopped";
@@ -40,6 +44,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _profileNotes = "";
     [ObservableProperty] private double _zoomLevel = 1.0;
     [ObservableProperty] private string _zoomLabel = "100%";
+
+    // ── printer settings (persisted) ────────────────────────────────
+    [ObservableProperty] private bool _startServerOnLaunch;
     [ObservableProperty] private string _systemPrinterName = "";
     [ObservableProperty] private string _printStatus = "";
     [ObservableProperty] private string _virtualPrinterName = "";
@@ -81,6 +88,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         Port = _settings.Port > 0 ? _settings.Port : 9100;
         ListenOnLan = _settings.ListenOnLan;
+        StartServerOnLaunch = _settings.StartServerOnLaunch;
+
+        // Render options: seed the live instance from the persisted copy.
+        _printRenderOptions.PageScale = _settings.PrinterSettings.PageScale;
+        _printRenderOptions.Halftoning = _settings.PrinterSettings.Halftoning;
+        _printRenderOptions.Copies = _settings.PrinterSettings.Copies;
+        _printRenderOptions.LineSpacing = _settings.PrinterSettings.LineSpacing;
+        _printRenderOptions.DrawBorders = _settings.PrinterSettings.DrawBorders;
+        _printRenderOptions.PrintFrontToBack = _settings.PrinterSettings.PrintFrontToBack;
+        _printRenderOptions.MarginTop = _settings.PrinterSettings.MarginTop;
+        _printRenderOptions.MarginLeft = _settings.PrinterSettings.MarginLeft;
+
         SystemPrinterName = _settings.ForwardPrinterName ?? "";
         VirtualPrinterName = _settings.VirtualPrinterName ?? "";
 
@@ -136,6 +155,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         StartServerCommand = new AsyncRelayCommand(StartServerAsync);
         StopServerCommand = new RelayCommand(StopServer);
+        OpenPrintSettingsCommand = new RelayCommand(() => PrintSettingsRequested?.Invoke(_printRenderOptions));
         ClearReceiptCommand = new RelayCommand(ClearReceipt);
         SendDemoCommand = new RelayCommand(SendDemo);
         SendArabicDemoCommand = new RelayCommand(SendArabicDemo);
@@ -152,7 +172,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RefreshVirtualPrinterState();
 
         StatusMessage = "Ready — type a printer name and click Install, then print to it from any app.";
+        RefreshPrinterSettingsSummary();
         UpdatePreview();
+
+        // Start the server automatically if the user asked for it — the
+        // OnStartServerOnLaunchChanged handler would also start it, but only
+        // if the flag changed; a no-op assignment would not, so start here.
+        if (_settings.StartServerOnLaunch)
+            _ = StartServerAsync();
     }
 
     // ───────────────────────── settings persistence ─────────────────────────
@@ -215,6 +242,52 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (value != null) UpdatePreview();
     }
 
+    partial void OnStartServerOnLaunchChanged(bool value)
+    {
+        _settings.StartServerOnLaunch = value;
+        PersistSettings();
+        if (value && _server is { IsRunning: false })
+            _ = StartServerAsync();
+    }
+
+    [ObservableProperty] private string _printerSettingsSummary = "";
+    [ObservableProperty] private IRelayCommand _openPrintSettingsCommand;
+
+    /// <summary>
+    /// Raised when the user clicks "Printer Preferences…" in the PRINTER
+    /// SETTINGS card. The live options instance is passed so the caller
+    /// (MainWindow) can construct the modal dialog on top of it.
+    /// </summary>
+    public Action<RenderOptions>? PrintSettingsRequested;
+
+    // ───────────────────────── printer settings summary ─────────────────────────
+
+    /// <summary>Live settings (used by the preferences dialog to persist on OK).</summary>
+    public AppSettings Settings => _settings;
+
+    public void RefreshPrinterSettingsSummary()
+    {
+        var o = _printRenderOptions;
+        var parts = new List<string>
+        {
+            $"page ×{(int)Math.Round(o.PageScale * 100)}%",
+            o.LineSpacing == 0 ? "line: follow stream" : $"line: {o.LineSpacing}×18 pt",
+        };
+        if (o.Copies > 1) parts.Add($"{o.Copies} copies");
+        if (o.Halftoning is not HalftoningMode.None) parts.Add("halftoning");
+        if (!o.DrawBorders) parts.Add("no borders");
+        if (o.MarginTop != 30) parts.Add($"top {o.MarginTop}");
+        if (o.MarginLeft != 0) parts.Add($"left {o.MarginLeft}");
+        PrinterSettingsSummary = string.Join("  •  ", parts);
+    }
+
+    /// <summary>Called after the preferences dialog closes (OK or Cancel): refresh summary + preview.</summary>
+    public void OnPrinterSettingsChanged()
+    {
+        RefreshPrinterSettingsSummary();
+        UpdatePreview();
+    }
+
     // ───────────────────────── profile ─────────────────────────
 
     private void ApplyProfile(PrinterProfile profile)
@@ -250,7 +323,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var doc = _parser.CurrentDocument ?? new ReceiptDocument();
 
             var old = _lastSkBitmap;
-            _lastSkBitmap = _renderer.Render(doc, paper, scale: 2);
+            _lastSkBitmap = _renderer.Render(doc, paper, scale: 2, _printRenderOptions);
             old?.Dispose();
 
             ApplyZoomToPreview();
@@ -263,7 +336,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void SetZoom(double level)
     {
-        ZoomLevel = Math.Clamp(level, 0.5, 3.0);
+        ZoomLevel = Math.Clamp(level, 0.25, 3.0);
         ZoomLabel = $"{(int)(ZoomLevel * 100)}%";
         ApplyZoomToPreview();
     }
@@ -647,7 +720,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var (ok, message) = _printService.Print(
                 _parser.CurrentDocument,
                 SelectedPaperSize ?? PaperSize.Presets[0],
-                name);
+                name,
+                copies: Math.Max(1, _printRenderOptions.Copies),
+                halftoning: _printRenderOptions.Halftoning,
+                pageScale: _printRenderOptions.PageScale);
 
             if (ok)
             {

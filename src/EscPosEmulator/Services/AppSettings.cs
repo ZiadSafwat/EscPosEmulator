@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using EscPosEmulator.Models;
 
 namespace EscPosEmulator.Services;
 
@@ -21,6 +22,12 @@ public sealed class AppSettings
 
     /// <summary>Automatically start the listener when the virtual printer is installed.</summary>
     public bool AutoStartOnInstall { get; set; } = true;
+
+    /// <summary>Start the TCP listener automatically when the app launches.</summary>
+    public bool StartServerOnLaunch { get; set; }
+
+    /// <summary>User-adjustable preview rendering options (printer settings).</summary>
+    public RenderOptions PrinterSettings { get; set; } = new();
 
     /// <summary>Display name of the selected hardware profile ("" = first catalog entry).</summary>
     public string SelectedProfile { get; set; } = "Epson TM-T88V / TM-T88VI";
@@ -72,11 +79,44 @@ public sealed class AppSettings
             var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
             if (settings == null) return new AppSettings();
             if (settings.Port < 1 || settings.Port > 65535) settings.Port = 9100;
+            settings.PrinterSettings ??= new RenderOptions();
+            MigrateLegacyPrinterSettings(json, settings);
+            ClampPrinterSettings(settings.PrinterSettings);
             return settings;
         }
         catch
         {
             return new AppSettings();
+        }
+    }
+
+    private static void ClampPrinterSettings(RenderOptions o)
+    {
+        if (o.PageScale is < 0.5 or > 4.0) o.PageScale = 1.0;
+        o.Copies = Math.Clamp(o.Copies, 1, 99);
+        o.LineSpacing = Math.Clamp(o.LineSpacing, 0, 99);
+        o.MarginTop = Math.Clamp(o.MarginTop, 0, 120);
+        o.MarginLeft = Math.Clamp(o.MarginLeft, 0, 60);
+    }
+
+    /// <summary>Migrate settings.json files saved by an older build.</summary>
+    private static void MigrateLegacyPrinterSettings(string json, AppSettings settings)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("PrinterSettings", out var ps)) return;
+            // older builds stored text zoom as "TextScale" — carry it over
+            if (ps.TryGetProperty("TextScale", out var legacy) &&
+                legacy.ValueKind == JsonValueKind.Number)
+            {
+                double ts = legacy.GetDouble();
+                if (ts is >= 0.5 and <= 4.0) settings.PrinterSettings.PageScale = ts;
+            }
+        }
+        catch
+        {
+            // leave the defaults in place
         }
     }
 

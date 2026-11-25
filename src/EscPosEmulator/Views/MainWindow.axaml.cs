@@ -13,8 +13,19 @@ public partial class MainWindow : Window
         // so defer VM wiring until the window is loaded.
         Loaded += (_, _) =>
         {
-            if (DataContext is MainViewModel vm)
-                vm.PropertyChanged += OnVmPropertyChanged;
+            if (DataContext is not MainViewModel vm) return;
+            vm.PropertyChanged += OnVmPropertyChanged;
+
+            // "Printer Preferences…" opens the Windows-style dialog on top
+            // of the live render options; OK persists + redraws the preview.
+            vm.PrintSettingsRequested += options =>
+            {
+                string paper = vm.SelectedPaperSize?.Name ?? "80 mm";
+                var dialogVm = new PrintingPreferencesViewModel(options, $"{paper} · 300 mm paper roll");
+                dialogVm.ConfigurePersistence(vm.Settings);
+                dialogVm.Completed += _ => vm.OnPrinterSettingsChanged();   // UI thread
+                _ = new PrintingPreferencesWindow(dialogVm).ShowDialog(this);
+            };
         };
 
         Closed += (_, _) =>

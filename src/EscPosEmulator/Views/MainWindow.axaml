@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:EscPosEmulator.ViewModels"
         xmlns:models="using:EscPosEmulator.Models"
+        xmlns:sys="using:System"
         x:Class="EscPosEmulator.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Title="ESC/POS Thermal Printer Emulator — v3"
@@ -122,7 +123,23 @@
                         Background="#C42B1C" Foreground="White" Padding="14,6" CornerRadius="4"/>
               </StackPanel>
             </Grid>
+            <CheckBox Content="Auto-start server on launch" IsChecked="{Binding StartServerOnLaunch}"
+                      Foreground="#CCC" FontSize="12"/>
             <TextBlock Text="{Binding ServerStatus}" Foreground="#9CDCFE" FontSize="13"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Printer Settings -->
+        <Border Background="#2D2D30" CornerRadius="8" Padding="12">
+          <StackPanel Spacing="8">
+            <TextBlock Text="PRINTER SETTINGS" FontWeight="SemiBold" Foreground="#4EC9B0" FontSize="12" LetterSpacing="1"/>
+            <TextBlock Text="{Binding PrinterSettingsSummary}" Foreground="#CE9178" FontSize="12"
+                       TextWrapping="Wrap"/>
+            <Button Content="⚙  Printer Preferences…" Command="{Binding OpenPrintSettingsCommand}"
+                    HorizontalAlignment="Stretch" Background="#0E639C" Foreground="White"
+                    Padding="12,8" CornerRadius="4"/>
+            <TextBlock Text="Layout · Paper-Quality · Advanced — like the Windows printing preferences"
+                       Foreground="#555" FontSize="10"/>
           </StackPanel>
         </Border>
 

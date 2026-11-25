@@ -54,7 +54,8 @@ public sealed class PrintService
     /// Prints the receipt document to the named Windows printer.
     /// Returns (success, human-readable message).
     /// </summary>
-    public (bool Ok, string Message) Print(ReceiptDocument? doc, PaperSize? paper, string? printerName)
+    public (bool Ok, string Message) Print(ReceiptDocument? doc, PaperSize? paper, string? printerName,
+            int copies = 1, HalftoningMode halftoning = HalftoningMode.None, double pageScale = 1.0)
     {
         if (doc == null)
             return (false, "No receipt to print yet.");
@@ -66,6 +67,16 @@ public sealed class PrintService
             return (false, "System printer output is only supported on Windows.");
 
         paper ??= PaperSize.Presets.FirstOrDefault(p => p.WidthMm == 80) ?? PaperSize.Presets[0];
+        copies = Math.Clamp(copies, 1, 99);
+        pageScale = Math.Clamp(pageScale, 0.5, 4.0);
+
+        var renderOptions = new RenderOptions
+        {
+            Halftoning = halftoning,
+            PageScale = pageScale,
+            DrawBorders = false,     // printed paper has no decorative border
+            MarginTop = 1,
+        };
 
         try
         {
@@ -76,7 +87,7 @@ public sealed class PrintService
             }
 
             // Render at scale 1 for print fidelity.
-            using var skBitmap = _renderer.Render(doc, paper, scale: 1);
+            using var skBitmap = _renderer.Render(doc, paper, scale: 1, renderOptions);
             if (skBitmap == null)
                 return (false, "Render returned null.");
 
@@ -91,6 +102,7 @@ public sealed class PrintService
             using var image = System.Drawing.Image.FromStream(ms);
             using var pd = new System.Drawing.Printing.PrintDocument();
             pd.PrinterSettings.PrinterName = printerName;
+            pd.PrinterSettings.Copies = (short)copies;    // driver-level "Copies"
             pd.DefaultPageSettings.Margins = new System.Drawing.Printing.Margins(20, 20, 20, 20);
 
             // Narrow paper width matching the thermal profile.
@@ -119,7 +131,9 @@ public sealed class PrintService
             };
 
             pd.Print();
-            return (true, $"Sent to printer '{printerName}'.");
+            return (true, copies > 1
+                ? $"Sent to printer '{printerName}' ({copies} copies)."
+                : $"Sent to printer '{printerName}'.");
         }
         catch (Exception ex)
         {
