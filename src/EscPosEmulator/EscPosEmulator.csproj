@@ -9,7 +9,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>EscPosEmulator</RootNamespace>
     <AssemblyName>EscPosEmulator</AssemblyName>
-    <Version>3.0.0</Version>
+    <Version>3.1.0</Version>
     <AssemblyTitle>ESC/POS Thermal Printer Emulator</AssemblyTitle>
     <Product>EscPosEmulator</Product>
     <Description>ESC/POS thermal receipt printer emulator with live preview, hardware profiles, and a named Windows virtual printer.</Description>
