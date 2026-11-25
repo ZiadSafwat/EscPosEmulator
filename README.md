@@ -6,7 +6,7 @@
 [![Latest release](https://img.shields.io/github/v/release/ZiadSafwat/EscPosEmulator?color=2ea44f&label=latest%20release)](https://github.com/ZiadSafwat/EscPosEmulator/releases/latest)
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![Avalonia](https://img.shields.io/badge/Avalonia-11-4513D1?logo=avalonia&logoColor=white)](https://avaloniaui.net/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D6?logo=windows&logoColor=white)](#requirements)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D6?logo=windows&logoColor=white)](#build-from-source)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <p align="center">
@@ -99,16 +99,17 @@ paper or owning a thermal printer.
 
 ### Hardware profiles
 
-- **37 ESC/POS profiles** from Epson, Star, Citizen, Bixolon, Xprinter, Zjiang,
-  Rongta and more.
+- **37 ESC/POS profiles** from Epson, Star, Citizen, Bixolon, Xprinter, Rongta,
+  Gprinter, Zijiang, Sewoo, Honeywell, Zebra, POS-X, Ithaca and generic models.
 - Each profile carries paper width, printable dots, DPI, cutter and drawer-kick
   capability, QR/raster support and default code page.
 - Paper size presets for 58 mm / 76 mm / 80 mm rolls, plus a custom 72 mm size.
 
 ### Code pages & text
 
-- CP437, CP850, CP852, CP858, CP860, CP863, CP865, CP866, Windows-1252/1256,
-  CP720, CP864, Hebrew (CP862) and **UTF-8** (auto-detected).
+- CP437, CP850, CP852, CP858, CP860, CP863, CP865, CP866, Windows-1250/1251/
+  1252/1253/1255/1256, CP720, Windows-874, Shift-JIS, GBK, Big5 and **UTF-8**
+  (auto-detected).
 - Switching code page via `ESC t n` is honoured per stream.
 - Text formatting: bold, underline, double width/height, alignment, invert.
 - QR codes (`GS ( k`), barcodes (`GS k` — CODE39, EAN13, EAN8, CODE128, UPCA,
@@ -194,7 +195,7 @@ Notes:
 
 Arabic is the reason most emulators fail. This one implements the full pipeline:
 
-- **Decoding** — Windows-1256 (`ESC t 27`), CP720 (`ESC t 30`), CP864 and UTF-8
+- **Decoding** — Windows-1256 (`ESC t 27`), CP720 (`ESC t 30`) and UTF-8
   (auto-detected, even when a legacy table is selected).
 - **Shaping** — HarfBuzz contextual shaping for connected Arabic letters.
 - **Ordering** — a Unicode bidi pass keeps RTL runs right-to-left while embedded
