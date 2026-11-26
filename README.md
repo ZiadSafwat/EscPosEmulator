@@ -11,6 +11,9 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <p align="center">
+  <img src="docs/image.png" alt="ESC/POS Thermal Printer Emulator — main window with live Arabic receipt preview" width="100%">
+</p>
+<p align="center">
   <img src="docs/main-window.png" alt="ESC/POS Thermal Printer Emulator — main window with live receipt preview" width="100%">
 </p>
 
